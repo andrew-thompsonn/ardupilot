@@ -8,6 +8,6 @@ void helloWorldQuinn(){
 }
 
 void helloWorldSunny(){
-	// quinn's functions for hello world ticket
+	// Sunny's functions for hello world ticket
 	//
 }
