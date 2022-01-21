@@ -179,20 +179,9 @@ void Plane::update_trajectory() {
 }
 
 void Plane::lqt_controller() {
-    /*float testMat1[6], testMat2[6];
-    for(uint8_t i = 0;i<6;i++) {
-        testMat1[i] = 6;
-        testMat2[i] = 2;
-    }
-    
-    float outMat[6];
-    mat_mul(testMat1, testMat2, outMat, 6);
-
-    for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 6; j++)
-            printf("%.10f  ", outMat[i * 6 + j]);
-        printf("\n");
-    }*/
+    //Uncomment these when compile linkage issue is fixed
+    //matrixMathFuncs testObject;
+    //testObject.matrixMathTest();
 
     printf("\nIn lqt task\n");
     printf("\n still in test - Q \n");
