@@ -10,3 +10,7 @@ void helloWorldCarson(){
 	// carson's functions for hello world ticket 
 	// cout << "Hellow World!";
 }
+void helloWorldKidd(){
+	// kidd's functions for hello world ticket 
+	// cout << "Hellow World!";
+}
