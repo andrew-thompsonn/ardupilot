@@ -118,7 +118,7 @@
 
 #include "../../ArduPlane/RALPHIE/STATE/state_task.h"
 //#include "../../libraries/AP_Math/AP_Math.h"
-#include "../../ArduPlane/RALPHIE/LQT/matrixMath.h"
+#include "matrixMath.h"
 /*
   main APM:Plane class
  */
