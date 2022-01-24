@@ -11,7 +11,11 @@
 class matrixMathFuncs {
 
     public:
+        typedef float Ftype;
+
         void matrixMathTest(int num);
+        uint16_t get_random(void);
+        void show_matrix(Ftype *A, int n);
 
 };
 
