@@ -53,6 +53,7 @@ SCHED_TASK_CLASS arguments:
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
                            // Units:   Hz      us
 	SCHED_TASK(update_state, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
+    SCHED_TASK(update_trajectory_input, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
 	SCHED_TASK(update_trajectory,       1,     50,   3),    /* TODO: determine correct scheduler parameters */
 	SCHED_TASK(lqt_controller, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
     SCHED_TASK(ahrs_update,           400,    400,   3),
@@ -176,9 +177,24 @@ void Plane::update_state() {
 	printf("Angles:   %.3f, %.3f, %.3f\n", currentState.roll*180/3.14, currentState.pitch*180/3.14, currentState.yaw*180/3.14);
 	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x, currentState.angularVelocity.y, currentState.angularVelocity.z);
 }
+void Plane::update_trajectory_input() {
+    trajectoryInput.currentState = update_state();
+    trajectoryInput.windDirection =  ahrs.wind_estimate();
+
+    //initial radius for orbit. hard code for now (how to recieve input from user?)
+    //trajectoryInput.radiusOrbit = 1000.0 
+
+
+    //starting gps location of initial orbit (how to set?)
+    //trajectoryInput.centerPoint.alt = ;
+    //trajectoryInput.centerPoint.lat = ;
+    //trajectoryInput.centerPoint.lng = ;
+
+    printf("Wind Direction: %.3f, %.3f, %.3f\n", trajectory.windDirection.x, trajectory.windDirection.y, trajectory.windDirection.z);
+}
 
 void Plane::update_trajectory() {
-
+    
     printf("\nIn trajectory task\n");
 }
 
