@@ -116,9 +116,15 @@
 #include "AP_Arming.h"
 
 
-#include "../../ArduPlane/RALPHIE/STATE/state_task.h"
-//#include "../../libraries/AP_Math/AP_Math.h"
+#include "LQT_Constants.h"
+
+//#include "../../ArduPlane/RALPHIE/STATE/state_task.h"
+//#include "../../ArduPlane/RALPHIE/WARIO/trajectory.h"
+// #include "../../ArduPlane/state_task.h"
+#include "state_task.h"
+#include "trajectory.h"
 #include "matrixMath.h"
+
 /*
   main APM:Plane class
  */
@@ -991,7 +997,10 @@ private:
 #endif
 
     // ArduPlane.cpp
-	
+
+    RalphieTrajectory trajectory;
+    aircraftState_t currentState;
+
 	void update_state();
 	void update_trajectory();
 	void lqt_controller();
