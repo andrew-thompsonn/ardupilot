@@ -4,7 +4,7 @@
 
 // Global parameter class.
 //
-class 00Parameters {
+class Parameters {
 public:
 
     /*
