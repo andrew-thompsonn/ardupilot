@@ -19,6 +19,8 @@ class matrixMathFuncs {
         void show_matrix(Ftype *A, int n);
         bool compare_mat(const Ftype *A, const Ftype *B, const uint8_t n);
 
+        float LQTMult(float gains[][6], float error[][6]);
+
 };
 
 
