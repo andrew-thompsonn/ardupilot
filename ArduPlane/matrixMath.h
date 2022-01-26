@@ -12,10 +12,12 @@ class matrixMathFuncs {
 
     public:
         typedef float Ftype;
+        #define MAT_ALG_ACCURACY    1e-4f
 
         void matrixMathTest(int num);
         uint16_t get_random(void);
         void show_matrix(Ftype *A, int n);
+        bool compare_mat(const Ftype *A, const Ftype *B, const uint8_t n);
 
 };
 

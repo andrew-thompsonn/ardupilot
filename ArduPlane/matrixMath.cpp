@@ -1,48 +1,26 @@
 #include "matrixMath.h"
 
 void matrixMathFuncs::matrixMathTest(int num){
-    //Test for 3x3 matrix
+    
+
+    //fast inverses
     Ftype test_mat[25],ident_mat[25];
     Ftype out_mat[25], out_mat2[25], mat[25];
     for(uint8_t i = 0;i<25;i++) {
         test_mat[i] = powf(-1,i)*get_random()/0.7f;
     }
-
-
-    //Test for 3x3 matrix
-    mat_identity(ident_mat, 3);
-    if (mat_inverse(test_mat,mat,3) && mat_inverse(mat, out_mat2, 3)) {
-        mat_mul(test_mat, mat, out_mat, 3);
+    
+    //Test for 5x5 matrix
+    mat_identity(ident_mat, 5);
+    show_matrix(ident_mat,5);
+    if (mat_inverse(test_mat,mat,5) && mat_inverse(mat, out_mat2, 5)) {
+        mat_mul(test_mat, mat, out_mat, 5);
     } else {
-        printf("3x3 Matrix is Singular!\n");
+        printf("5x5 Matrix is Singular!\n");
         return;
+    }
 
-    }
-    printf("\n\n3x3 Test Matrix:\n");
-    show_matrix(test_mat,3);
-    printf("\nInverse of Inverse of matrix\n");
-    show_matrix(mat,3);
-    printf("\nInv(A) * A\n");
-    show_matrix(out_mat,3);
-    printf("\n");
-    
-    /*float testMat1[num], testMat2[num];
-    for(uint8_t i = 0;i<num;i++) {
-        testMat1[i] = 6;
-        testMat2[i] = 2;
-	printf("testMat1 val: %f\n testMat2 val: %f\n",testMat1[i],testMat2[i]);
-    }
-    
-    // error seems to be coming from the use of mat_mul
-    float outMat[num];
-    mat_mul(testMat1, testMat2, outMat, num);
 
-    for (int i = 0; i < num; i++) {
-        for (int j = 0; j < num; j++)
-            printf("%.10f  ", outMat[i * num + j]);
-        printf("\n");
-    }
-    */	
 
 }
 
@@ -62,4 +40,16 @@ void matrixMathFuncs::show_matrix(Ftype *A, int n) {
             printf("%.10f  ", A[i * n + j]);
         printf("\n");
     }
+}
+
+bool matrixMathFuncs::compare_mat(const Ftype *A, const Ftype *B, const uint8_t n)
+{
+    for(uint8_t i = 0; i < n; i++) {
+        for(uint8_t j = 0; j < n; j++) {
+            if(fabsf(A[i*n + j] - B[i*n + j]) > MAT_ALG_ACCURACY) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
