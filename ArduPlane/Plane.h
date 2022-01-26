@@ -1,4 +1,4 @@
-/*
+0/*
    Lead developer: Andrew Tridgell & Tom Pittenger
 
    Authors:    Doug Weibel, Jose Julio, Jordi Munoz, Jason Short, Randy Mackay, Pat Hickey, John Arne Birkeland, Olivier Adler, Amilcar Lucas, Gregory Fletcher, Paul Riseborough, Brandon Jones, Jon Challinger
@@ -994,6 +994,9 @@ private:
 
 	void update_state();
     aircraftState_t currentState;
+
+    void update_trajectory_input();
+    warioInput trajectoryInput;
 
 	void update_trajectory();
     RalphieTrajectory ralphieTrajectory;
