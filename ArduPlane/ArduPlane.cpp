@@ -1,6 +1,6 @@
 /*
    Lead developer: Andrew Tridgell
- 
+
    Authors:    Doug Weibel, Jose Julio, Jordi Munoz, Jason Short, Randy Mackay, Pat Hickey, John Arne Birkeland, Olivier Adler, Amilcar Lucas, Gregory Fletcher, Paul Riseborough, Brandon Jones, Jon Challinger, Tom Pittenger
    Thanks to:  Chris Anderson, Michael Oborne, Paul Mather, Bill Premerlani, James Cohen, JB from rotorFX, Automatik, Fefenin, Peter Meister, Remzibi, Yury Smirnov, Sandro Benigno, Max Levine, Roberto Navoni, Lorenz Meier, Yury MonZon
 
@@ -160,7 +160,7 @@ void Plane::update_state() {
 	float yaw  = ahrs.get_yaw();
 
 	Vector3f omega = ahrs.get_gyro();
-	
+
 	Vector3f velocity;
 	ahrs.get_velocity_NED(velocity);
 
@@ -174,8 +174,66 @@ void Plane::update_state() {
 }
 
 void Plane::update_trajectory() {
+		// grab wind data
+    Vector3f wind = ahrs.wind_estimate();
+		float angle;
+		unsigned int startTime = 10; // 135 when taking real data
+		unsigned int endTime = 25; // 255 when taking real data
+		// statics just so they don't get overwritten each time - i think idk - it is working that's what matters - probably bad coding practice
+		static std::vector<float> windVec;
+		static std::vector<float> averageWindSpeedVec = {0};
+		static std::vector<float> angleVec;
+		static std::vector<float> averageAngleVec = {0};
+		// kept getting divide by 0 errors - this seems to fix it
+		wind.y = wind.y + 0.0000000000000000001;
+		// find angle every time step
+	  angle = atan(wind.x / wind.y)*180/3.14; 	// if angle = 0 -> wind is blowing from the north
+																						 // if angle = 90 -> wind is blowing FROM the east TO the west
+		// print the x and y speeds to monitor
+		printf("Wind: %.3f m/s, %.3f m/s   ", wind.x, wind.y); // if x = positive value -> wind is blowing TO the north FROM the south
+																													// if y = positive value -> wind is blowing TO the east FROM the west
 
-    printf("\nIn trajectory task\n");
+		// output the direciton based on sign of vectors components
+		if (wind.x < 0 && wind.y < 0){ // wind from the NW --- no correction needed
+		} else if (wind.x > 0 && wind.y < 0){ // wind from the SW
+			angle = angle + 180;
+		} else if (wind.x > 0 && wind.y > 0) { // wind from the SE
+			angle = angle + 180;
+		} else if (wind.x < 0 && wind.y > 0 ){ // wind from the NE
+			angle = angle + 360;
+		}
+		// track number of seconds the plane has been ARMED
+		static unsigned int callCount = 0;
+		if (arming.is_armed() == 1){
+			callCount++;
+		}
+		// monitor the time -- called once a second
+		printf("# of seconds passed: %.3u \n", callCount);
+		// initialize average data points
+		static float averageWindSpeed = 0.0;
+		static float averageAngle = 0.0;
+		// assign an area to take data --- using the amount of times the whole functioned has been called
+		if (callCount > startTime && callCount < endTime){ // 2:15 for max overshoot angle -> call count = 135 // 4:15 for max overcorrection angle -> call count = 255
+			// attach each new wind and angle data point to a vector
+			windVec.push_back(sqrtf(pow(wind.x,2)+pow(wind.y,2))); // taking magnitude of wind
+			angleVec.push_back(angle);
+			for (float j = 0; j < windVec.size(); j++) {
+				// add each wind speed
+				averageWindSpeed = averageWindSpeed + windVec[j];
+				averageAngle = averageAngle + angleVec[j];
+			}
+			// calcaulte average wind speed over the above data collection time frame
+			averageWindSpeed = averageWindSpeed / windVec.size();
+			averageAngle = averageAngle / angleVec.size();
+		}
+		// once we reach the end of data period - reset and push the new average to the vector
+		if (callCount > endTime){
+			callCount = 0;
+			averageWindSpeedVec.push_back(averageWindSpeed);
+			averageAngleVec.push_back(averageAngle);
+		}
+		// average wind speed and direction for each data collection time frame - printing from the back where the new value is pushed
+		printf("Average Wind Speed and Direction: %.3f m/s --- %.3f degrees CW from North ", averageWindSpeedVec.back(), averageAngleVec.back());
 }
 
 void Plane::lqt_controller() {
@@ -366,7 +424,7 @@ void Plane::one_second_loop()
         gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
             last_home_update_ms = gps.last_message_time_ms();
             update_home();
-            
+
             // reset the landing altitude correction
             landing.alt_offset = 0;
     }
@@ -401,9 +459,9 @@ void Plane::airspeed_ratio_update(void)
         gps.status() < AP_GPS::GPS_OK_FIX_3D ||
         gps.ground_speed() < 4) {
         // don't calibrate when not moving
-        return;        
+        return;
     }
-    if (airspeed.get_airspeed() < aparm.airspeed_min && 
+    if (airspeed.get_airspeed() < aparm.airspeed_min &&
         gps.ground_speed() < (uint32_t)aparm.airspeed_min) {
         // don't calibrate when flying below the minimum airspeed. We
         // check both airspeed and ground speed to catch cases where
@@ -555,7 +613,7 @@ void Plane::update_alt()
     } else if (gps.status() >= AP_GPS::GPS_OK_FIX_3D && gps.have_vertical_velocity()) {
         sink_rate = gps.velocity().z;
     } else {
-        sink_rate = -barometer.get_climb_rate();        
+        sink_rate = -barometer.get_climb_rate();
     }
 
     // low pass the sink rate to take some of the noise out
