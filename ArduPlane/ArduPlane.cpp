@@ -181,11 +181,9 @@ void Plane::update_trajectory() {
 
 void Plane::lqt_controller() {
     //Uncomment these when compile linkage issue is fixed
+    printf("\nIn lqt task\n");
     matrixMathFuncs testObject;
     testObject.matrixMathTest(get_random16());
-
-    printf("\nIn lqt task\n");
-    printf("\n Random number test: %d \n", get_random16());
 }
 
 
