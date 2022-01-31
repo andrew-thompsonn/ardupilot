@@ -2,17 +2,20 @@
 #define _RALPHIE_TRAJECTORY_H_
 
 #include "state_task.h"
+#include <AP_Math/AP_Math.h>
 
 #define WARIO_TRAJECTORY_SIZE   (100)
-
+#define PI (3.14159265)
 typedef struct {
 
-	float lat;
-	float lon;
+	float x;
+	float y;
 	float rad;
 
 	float maxAlt;
 	float minAlt;
+
+    float initialAngle;
 
 } warioInput_t;
 
