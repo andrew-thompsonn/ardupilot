@@ -747,6 +747,7 @@ public:
     bool controls=true;
 
     void crashThePlane();
+    void controllerLQT();
 
 protected:
     
