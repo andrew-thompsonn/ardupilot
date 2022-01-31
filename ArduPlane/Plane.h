@@ -173,6 +173,7 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    friend class ModeRalphie;
 
     Plane(void);
 
@@ -302,6 +303,8 @@ private:
 #if HAL_QUADPLANE_ENABLED
     ModeLoiterAltQLand mode_lotier_qland;
 #endif
+
+    ModeRalphie mode_ralphie;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -998,12 +1001,12 @@ private:
 
     // ArduPlane.cpp
 
-    RalphieTrajectory trajectory;
-    aircraftState_t currentState;
+    // RalphieTrajectory trajectory;
+    // aircraftState_t currentState;
 
-	void update_state();
-	void update_trajectory();
-	void lqt_controller();
+	// void update_state();
+	// void update_trajectory();
+	// void lqt_controller();
 
     void disarm_if_autoland_complete();
 # if OSD_ENABLED
