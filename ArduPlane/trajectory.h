@@ -16,6 +16,8 @@ typedef struct {
 	float minAlt;
 
     float initialAngle;
+ 
+    float targetVelocity
 
 } warioInput_t;
 
