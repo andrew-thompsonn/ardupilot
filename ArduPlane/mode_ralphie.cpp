@@ -42,8 +42,25 @@ void ModeRalphie::controllerLQT() {
     float latError[6] = {1,5,66,85,2,20};
     //float lonError[6] = {1,5,66,85,2,20};
 
+    // BASED ON CASE, SWITCH TO DIFFERENT GAIN VALUES //
+    float gainsLat[2][6] = GAINS_LAT_LINE;
+    //float gainsLon[2][6] = 
+
+    /*
+    // declaring the actual state of the aircraft //
+    //v p r phi psi y
+    float latState[6] = {currentState.velocity.y,currentState.angularVelocity.x,currentState.angularVelocity.z,currentState.roll,currentState.yaw,currentState.position.y};
+    //u w q theta x z
+    float lonState[6] = {currentState.velocity.x,currentState.velocity.z,currentState.angularVelocity.y,currentState.pitch,currentState.position.x,currentState.position.z};
+    
+    // Desired state determined by WARIO algorithm //
+    float latStateDesired[6];
+    float lonStateDesired[6];
+    */
+
     matrixMathFuncs matrixTestObject;
-    matrixTestObject.LQTMult(GAINS_LAT_LINE,latError,latInput);
+    matrixTestObject.LQTMult(gainsLat,latError,latInput);
+    matrixTestObject.LQTMult(gainsLon,lonError,lonInput);
     
     for (int i = 0; i < 2; i++) {
         printf("Computed control input in index %d is %f\n",i,latInput[i]);
