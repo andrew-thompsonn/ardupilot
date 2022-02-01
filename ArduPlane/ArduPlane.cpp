@@ -53,7 +53,7 @@ SCHED_TASK_CLASS arguments:
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
                            // Units:   Hz      us
 	// SCHED_TASK(update_state, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
-	// SCHED_TASK(update_trajectory,       1,     50,   3),    /* TODO: determine correct scheduler parameters */
+    SCHED_TASK(update_trajectory,       1,     50,   3),    /* TODO: determine correct scheduler parameters */
 	// SCHED_TASK(lqt_controller, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
     SCHED_TASK(ahrs_update,           400,    400,   3),
     SCHED_TASK(read_radio,             50,    100,   6),
@@ -161,10 +161,25 @@ constexpr int8_t Plane::_failsafe_priorities[6];
 // 	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x, currentState.angularVelocity.y, currentState.angularVelocity.z);
 // }
 
-// void Plane::update_trajectory() {
+ void Plane::update_trajectory() {
 
-//     printf("\nIn trajectory task\n");
-// }
+     printf("\nIn trajectory task\n");
+
+ 
+    //test parameters for init
+    warioInput_t testParameters;
+
+    testParameters.x = 00.00;
+    testParameters.y = 0.00;
+    testParameters.rad = 100.0;
+    testParameters.maxAlt = 50.0;
+    testParameters.minAlt = 0.0;
+    testParameters.initialAngle = 0.00;
+    testParameters.targetVelocity = 20.0;
+
+    circleTrajectory.init(testParameters);
+
+ }
 
 // void Plane::lqt_controller() {
 

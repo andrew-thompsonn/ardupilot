@@ -3,6 +3,7 @@
 
 #include "state_task.h"
 #include <AP_Math/AP_Math.h>
+#include <cstdio>
 
 #define WARIO_TRAJECTORY_SIZE   (100)
 #define PI (3.14159265)
@@ -17,7 +18,7 @@ typedef struct {
 
     float initialAngle;
  
-    float targetVelocity
+    float targetVelocity;
 
 } warioInput_t;
 

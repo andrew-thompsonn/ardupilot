@@ -1,6 +1,5 @@
 #include "trajectory.h"
 
-
 void RalphieTrajectory::init(warioInput_t parameters) {
 // TODO: circle
  

@@ -1000,11 +1000,11 @@ private:
 
     // ArduPlane.cpp
 
-    // RalphieTrajectory trajectory;
+     RalphieTrajectory circleTrajectory;
     // aircraftState_t currentState;
 
 	// void update_state();
-	// void update_trajectory();
+	 void update_trajectory();
 	// void lqt_controller();
 
     void disarm_if_autoland_complete();
