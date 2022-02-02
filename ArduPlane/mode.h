@@ -747,7 +747,7 @@ public:
     bool controls=true;
 
     void crashThePlane();
-    void controllerLQT();
+    void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
 
 protected:
     
