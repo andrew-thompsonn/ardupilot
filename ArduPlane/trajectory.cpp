@@ -33,33 +33,29 @@ void RalphieTrajectory::init(warioInput_t parameters) {
    //create array of aircraftStates
    //aircraftState_t circlePoints[WARIO_TRAJECTORY_SIZE];
  
- 
+    float cRoll;
    //write positions into vector3f for input into aircraft_statet struct.
+
    for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
    {
        waypoints[i].position.x = xPos[i];
        waypoints[i].position.y = yPos[i];
        waypoints[i].position.z = parameters.maxAlt;
-   }
+
    //velocities into array of aircraft_statet
-   for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
-   {
+
        waypoints[i].velocity.x = parameters.targetVelocity;
        waypoints[i].velocity.y = 0.0;
        waypoints[i].velocity.z = 0.0;
-   }
  
    //angular rates into aircraftstate array
-    for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
-   {
+   
        waypoints[i].angularVelocity.x = 0.0;
        waypoints[i].angularVelocity.y = 0.0;
        waypoints[i].angularVelocity.z = 0.0;
-   }
+
    //euler angles into aircraftstate array
-   float cRoll;
-   for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
-   {
+
        cRoll = atan2f(pow(parameters.targetVelocity,2),(parameters.rad * 9.81));
        waypoints[i].roll = cRoll;
        waypoints[i].pitch= 0.0;
