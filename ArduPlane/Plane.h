@@ -116,13 +116,6 @@
 #include "AP_Arming.h"
 
 
-#include "LQT_Constants.h"
-
-//#include "../../ArduPlane/RALPHIE/STATE/state_task.h"
-//#include "../../ArduPlane/RALPHIE/WARIO/trajectory.h"
-// #include "../../ArduPlane/state_task.h"
-#include "state_task.h"
-#include "trajectory.h"
 
 /*
   main APM:Plane class
@@ -999,14 +992,6 @@ private:
 #endif
 
     // ArduPlane.cpp
-
-    // RalphieTrajectory trajectory;
-    // aircraftState_t currentState;
-
-	// void update_state();
-	// void update_trajectory();
-	// void lqt_controller();
-
     void disarm_if_autoland_complete();
 # if OSD_ENABLED
     void get_osd_roll_pitch_rad(float &roll, float &pitch) const override;

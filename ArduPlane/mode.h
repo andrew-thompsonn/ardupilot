@@ -8,7 +8,7 @@
 #include <AP_Vehicle/ModeReason.h>
 #include "quadplane.h"
 #include "trajectory.h"
-#include "state_task.h"
+#include "state_types_ralphie.h"
 
 class AC_PosControl;
 class AC_AttitudeControl_Multi;
