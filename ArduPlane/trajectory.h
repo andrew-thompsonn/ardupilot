@@ -4,14 +4,16 @@
 #include "state_task.h"
 #include <AP_Math/AP_Math.h>
 #include <cstdio>
+#include <math.h>
+
 
 #define WARIO_TRAJECTORY_SIZE   (100)
 #define PI (3.14159265)
 typedef struct {
 
-	float x;
-	float y;
-	float rad;
+	float lat;
+	float lon;
+	float rad;  //convert to gps degrees by /111111. 
 
 	float maxAlt;
 	float minAlt;
@@ -37,9 +39,11 @@ class RalphieTrajectory {
      */
     aircraftState_t waypoints[WARIO_TRAJECTORY_SIZE];
 
+
+
 public:
 
-    /**
+    /**76
      * @brief Generate the default circular trajectory 
      * 
      */
@@ -49,7 +53,7 @@ public:
      * @brief Update the trajectory based on the current wind estimate
      * 
      */
-    void update();
+    void update(warioInput_t parameters);
 
     /**
      * @brief Set the current wind estimate

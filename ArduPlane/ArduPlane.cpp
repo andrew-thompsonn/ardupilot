@@ -169,15 +169,17 @@ constexpr int8_t Plane::_failsafe_priorities[6];
     //test parameters for init
     warioInput_t testParameters;
 
-    testParameters.x = 00.00;
-    testParameters.y = 0.00;
-    testParameters.rad = 100.0;
-    testParameters.maxAlt = 50.0;
-    testParameters.minAlt = 0.0;
+    testParameters.lat = -35.36227547; //GPS coordinates
+    testParameters.lon = 149.16585604; //GPS coordinates
+    testParameters.rad = 1000 / 111111; //meters divided by 111111 to convert to deg (GPS)
+    testParameters.maxAlt = 683.2;  //meters
+    testParameters.minAlt = 0.0;  
     testParameters.initialAngle = 0.00;
-    testParameters.targetVelocity = 20.0;
+    testParameters.targetVelocity = 20.0 / 111111;
 
     circleTrajectory.init(testParameters);
+
+    circleTrajectory.update(testParameters);
 
  }
 

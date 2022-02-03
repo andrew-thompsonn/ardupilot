@@ -64,7 +64,7 @@ void ModeRalphie::navigate() {
     if (navigation == INACTIVE)
         return;
     
-    trajectory.update();
+    //trajectory.update();
 
     plane.current_loc = plane.next_WP_loc;
     plane.next_WP_loc = plane.prev_WP_loc;
