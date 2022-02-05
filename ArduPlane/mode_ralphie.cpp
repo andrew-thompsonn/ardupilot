@@ -77,6 +77,7 @@ void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     }
 
     /*
+    // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]);
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]);
@@ -93,6 +94,7 @@ bool ModeRalphie::_enter() {
     printState();
 
     controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+    controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
 
     return true;
 }
