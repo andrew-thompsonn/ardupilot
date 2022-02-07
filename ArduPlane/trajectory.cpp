@@ -59,7 +59,7 @@ void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
 	static float averageWindSpeed = 0.0;
 	static float averageAngle = 0.0;
 	// assign an area to take data --- using the amount of times the whole functioned has been called
-	if (callCount > startTime && callCount < endTime){ // 2:15 for max overshoot angle -> call count = 135 // 4:15 for max overcorrection angle -> call count = 255
+	if (callCount > startTime && callCount < endTime){
 		// attach each new wind and angle data point to a vector
 		windVec.push_back(sqrtf(pow(wind.x,2)+pow(wind.y,2))); // taking magnitude of wind
 		angleVec.push_back(angle);
@@ -80,8 +80,8 @@ void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
 	}
 	// average wind speed and direction for each data collection time frame - printing from the back where the new value is pushed
 	printf("Average Wind Speed and Direction: %.3f m/s --- %.3f degrees CW from North ", averageWindSpeedVec.back(), averageAngleVec.back());
-	currentWindSpeedEstimate = averageWindSpeedVec.back();
-	currentWindDirectionEstimate = averageAngleVec.back();
+	float currentWindSpeedEstimate = averageWindSpeedVec.back();
+	float currentWindDirectionEstimate = averageAngleVec.back();
     memcpy(&currentWindEstimate, &windEstimate, sizeof(Vector3f));
 
 }
