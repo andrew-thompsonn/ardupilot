@@ -1,7 +1,7 @@
 #ifndef _RALPHIE_TRAJECTORY_H_
 #define _RALPHIE_TRAJECTORY_H_
 
-#include "state_task.h"
+#include "state_types_ralphie.h"
 
 #define WARIO_TRAJECTORY_SIZE   (100)
 
