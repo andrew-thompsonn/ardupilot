@@ -7,21 +7,22 @@ void ModeRalphie::run() {
 
     /* For control system -> called from Plane::stablize() in Attitude.cpp line 503 */
     switch (desiredState.phase) {
-     
+
         case FLIGHT_PHASE_CIRCLE:
             break;
-      
+
         case FLIGHT_PHASE_STRAIGHT:
             break;
-       
+
         case FLIGHT_PHASE_SEMI_CIRCLE:
             break;
-        
+
         case FLIGHT_PHASE_TRANSITION:
             break;
     }
 
-    crashThePlane();
+    //crashThePlane();
+    //printState();
 }
 
 void ModeRalphie::crashThePlane() {
@@ -35,7 +36,7 @@ void ModeRalphie::crashThePlane() {
 
 
 bool ModeRalphie::_enter() {
-    
+
     /* Enters the mode, perform tasks that only need to happen on initialization */
     // trajectory.init();
     return true;
@@ -43,7 +44,7 @@ bool ModeRalphie::_enter() {
 
 
 void ModeRalphie::update() {
-    
+
     /* Called at 400 Hz from scheduler, other miscellaneous items can happen here */
 
     currentState.roll = plane.ahrs.get_roll();
@@ -59,12 +60,14 @@ void ModeRalphie::update() {
 
 
 void ModeRalphie::navigate() {
-    
+
     /* For trajectory and navigation -> called from Plane::navigate in ArduPlane.cpp line 109 */
     if (navigation == INACTIVE)
         return;
-    
+    Vector3f windEstimate;
     trajectory.update();
+
+    trajectory.setCurrentWind(windEstimate);
 
     plane.current_loc = plane.next_WP_loc;
     plane.next_WP_loc = plane.prev_WP_loc;
@@ -76,24 +79,20 @@ void ModeRalphie::navigate() {
 
 void ModeRalphie::printState() {
 
-	printf("Position: %.3f, %.3f, %.3f\n", currentState.position.x, 
-                                           currentState.position.y, 
+	printf("Position: %.3f, %.3f, %.3f\n", currentState.position.x,
+                                           currentState.position.y,
                                            currentState.position.z);
 
-	printf("Velocity: %.3f, %.3f, %.3f\n", currentState.velocity.x, 
-                                           currentState.velocity.y, 
+	printf("Velocity: %.3f, %.3f, %.3f\n", currentState.velocity.x,
+                                           currentState.velocity.y,
                                            currentState.velocity.z);
 
-	printf("Angles:   %.3f, %.3f, %.3f\n", currentState.roll*RAD_TO_DEG, 
-                                           currentState.pitch*RAD_TO_DEG, 
+	printf("Angles:   %.3f, %.3f, %.3f\n", currentState.roll*RAD_TO_DEG,
+                                           currentState.pitch*RAD_TO_DEG,
                                            currentState.yaw*RAD_TO_DEG);
 
-	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x, 
-                                             currentState.angularVelocity.y, 
+	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x,
+                                             currentState.angularVelocity.y,
                                              currentState.angularVelocity.z);
 
 }
-
-
-
-

@@ -21,34 +21,34 @@ class RalphieTrajectory {
 
     /**
      * @brief The current estimation of wind direction
-     * 
+     *
      */
     Vector3f currentWindEstimate;
 
     /**
      * @brief Array of aircraft states representing the trajectory
-     * 
+     *
      */
     aircraftState_t waypoints[WARIO_TRAJECTORY_SIZE];
 
 public:
 
     /**
-     * @brief Generate the default circular trajectory 
-     * 
+     * @brief Generate the default circular trajectory
+     *
      */
     void init(warioInput_t parameters);
 
     /**
      * @brief Update the trajectory based on the current wind estimate
-     * 
+     *
      */
     void update();
 
     /**
      * @brief Set the current wind estimate
-     * 
-     * @param windEstimate 
+     *
+     * @param windEstimate
      */
     void setCurrentWind(Vector3f windEstimate);
 

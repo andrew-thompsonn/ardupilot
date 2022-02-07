@@ -28,6 +28,12 @@
 #include <cmath>
 #include <stdarg.h>
 #include <stdio.h>
+#include <iostream>
+#include <vector>
+using namespace std;
+#include <numeric>
+#include <iomanip>
+
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
