@@ -80,8 +80,8 @@ void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
 	}
 	// average wind speed and direction for each data collection time frame - printing from the back where the new value is pushed
 	printf("Average Wind Speed and Direction: %.3f m/s --- %.3f degrees CW from North ", averageWindSpeedVec.back(), averageAngleVec.back());
-	float currentWindSpeedEstimate = averageWindSpeedVec.back();
-	float currentWindDirectionEstimate = averageAngleVec.back();
+	//float currentWindSpeedEstimate = averageWindSpeedVec.back();
+	// float currentWindDirectionEstimate = averageAngleVec.back();
     memcpy(&currentWindEstimate, &windEstimate, sizeof(Vector3f));
 
 }
