@@ -1,3 +1,6 @@
+#ifndef _LQT_CONSTANTS_H_
+#define _LQT_CONSTANTS_H_
+
 // LQT Constants Library 
 //
 // F_LAT matrix
@@ -42,3 +45,4 @@ float GAINS_LON_LINE[2][6] = {
     {0.0162,-0.0857,0.2525,2.6891,-0.0549,-0.0198},
     {-0.1516,0.0241,-0.0699,-0.6664,-0.0341,0.0293}
     };
+#endif

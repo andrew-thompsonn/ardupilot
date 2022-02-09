@@ -101,6 +101,8 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
         break;
     case Mode::Number::RALPHIE:
         break;
+    case Mode::Number::LQT:
+        break;
     }
 
     if (rate_controlled) {

@@ -98,7 +98,13 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
         ret = &mode_ralphie;
         break;
 
+    case Mode::Number::LQT:
+        ret = &mode_lqt;
+        break;
+
     }
+
+
     return ret;
 }
 

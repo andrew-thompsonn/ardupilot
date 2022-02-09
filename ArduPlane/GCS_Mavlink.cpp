@@ -71,6 +71,8 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
 
     case Mode::Number::RALPHIE:
         break;
+    case Mode::Number::LQT:
+        break;
     }
 
     if (!plane.training_manual_pitch || !plane.training_manual_roll) {

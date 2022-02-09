@@ -166,6 +166,7 @@ public:
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
     friend class ModeRalphie;
+    friend class ModeLQT;
 
     Plane(void);
 
@@ -297,6 +298,7 @@ private:
 #endif
 
     ModeRalphie mode_ralphie;
+    ModeLQT mode_lqt;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
