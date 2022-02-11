@@ -2,7 +2,7 @@
 #include "mode.h"
 #include "plane.h"
 
-//call mode 26 from console to switch to RALPHIE mode//
+//call mode 27 from console to switch to RALPHIE mode//
 void ModeLQT::run() {
 
     /* For control system -> called from Plane::stablize() in Attitude.cpp line 503 */
@@ -26,7 +26,7 @@ void ModeLQT::run() {
     }
 
     //crashThePlane();
-    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+    //controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
 }
 
 void ModeLQT::crashThePlane() {
@@ -54,7 +54,7 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     float lonState[6] = {currentState.velocity.x,currentState.velocity.z,currentState.angularVelocity.y,currentState.pitch,currentState.position.x,currentState.position.z};
     
     // Desired state determined by WARIO algorithm //
-    //NEED TO CHANGE TO WARIO VALUES
+    //for testing, use next_wp_loc() to update desired state, probably only going to be able to compare x and y location
     float latStateDesired[6] = {1,5,66,85,2,20};
     float lonStateDesired[6] = {1,5,66,85,2,20};
 
@@ -67,13 +67,13 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     matrixTestObject.LQTMult(gainsLat,latError,latInput);
     matrixTestObject.LQTMult(gainsLon,lonError,lonInput);
     
-    for (int i = 0; i < 2; i++) {
+    /*for (int i = 0; i < 2; i++) {
         printf("LATERAL: Computed control input in index %d is %f\n",i,latInput[i]);
     }
     printf("\n");
     for (int i = 0; i < 2; i++) {
         printf("LONGITUDINAL: Computed control input in index %d is %f\n",i,lonInput[i]);
-    }
+    }*/
 
     // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
@@ -110,6 +110,10 @@ void ModeLQT::update() {
     plane.ahrs.get_relative_position_NED_origin(currentState.position);
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
+
+    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+
+    //printf("printing current waypoint data: %d \n",plane.current_loc.alt);
 
     // printState();
 }
