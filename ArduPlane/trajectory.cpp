@@ -266,13 +266,18 @@ void RalphieTrajectory::update(warioInput_t parameters) {
     }
     
     //rotate default squircle trajectory into a target direction around center location. 
-    float rotationAngle = PI / 4;
+    //rotation angle defined as angle of rotation counterclockwise from 0  to final starting angle to next squircle. 
+    float rotationAngle = PI ;
 
     //generate transition path 
-    float initialAngle = 0.0; 
-    float finalAngle = rotationAngle + initialAngle; 
+    float initialAngle = 0;  //previous wind/squircle direction
+    float finalAngle = rotationAngle; 
     float deltaAngle = (2*PI)/WARIO_TRAJECTORY_SIZE;
     int transitionSize = floorf((finalAngle-initialAngle)/deltaAngle);
+     if (rotationAngle < initialAngle){
+        transitionSize = floorf((2*PI - initialAngle)+ rotationAngle);
+    }
+     printf("initial Angle: %.3f, final Angle: %.3f, transition size: %.3d\n", initialAngle, finalAngle, transitionSize); 
     float xTransition[transitionSize];
     float yTransition[transitionSize];
    for (int i = 0; i < transitionSize; i++)
