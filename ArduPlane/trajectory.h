@@ -1,18 +1,29 @@
 #ifndef _RALPHIE_TRAJECTORY_H_
 #define _RALPHIE_TRAJECTORY_H_
 
+#include "state_task.h"
+#include <AP_Math/AP_Math.h>
+#include <stdio.h>
+#include <cstdio>
+#include <math.h>
+#include <AP_AHRS/AP_AHRS.h> 
 #include "state_types_ralphie.h"
 
-#define WARIO_TRAJECTORY_SIZE   (100)
 
+#define WARIO_TRAJECTORY_SIZE   (100)
+#define PI (3.14159265)
 typedef struct {
 
 	float lat;
 	float lon;
-	float rad;
+	float rad;  //convert to gps degrees by /111111. 
 
 	float maxAlt;
 	float minAlt;
+
+    float initialAngle;
+ 
+    float targetVelocity;
 
 } warioInput_t;
 
@@ -31,9 +42,11 @@ class RalphieTrajectory {
      */
     aircraftState_t waypoints[WARIO_TRAJECTORY_SIZE];
 
+
+
 public:
 
-    /**
+    /**76
      * @brief Generate the default circular trajectory 
      * 
      */
@@ -43,7 +56,7 @@ public:
      * @brief Update the trajectory based on the current wind estimate
      * 
      */
-    void update();
+    void update(warioInput_t parameters);
 
     /**
      * @brief Set the current wind estimate
