@@ -668,6 +668,7 @@ def _build_recursion(bld):
         # vehicle-dependent libraries.
         '*',
         'Tools/*',
+        'ArduPlane/tests/',
         'libraries/*/examples/*',
         'libraries/*/tests',
         'libraries/*/utility/tests',
