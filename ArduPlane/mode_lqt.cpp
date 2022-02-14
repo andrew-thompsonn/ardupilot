@@ -57,11 +57,15 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     //for testing, use next_wp_loc() to update desired state, probably only going to be able to compare x and y location
     //Use get_distance_NED from the Location Struct defined in AP_Common->Location.h
     
-    Location starting(currentState.position.y, currentState.position.x, currentState.position.y, Location::AltFrame::ABSOLUTE);
-    Vector2f locationNED = starting.get_distance_NE(plane.next_WP_loc);
+    //printf("state values in x y z: %f %f %f\n",currentState.velocity.x,currentState.velocity.y,currentState.velocity.z);
+    
+    Location loc; // <-- using zero() constructor in Location
+    printf("boolean returned is %d\n", loc.is_zero());
+    
+    /*Vector2f locationNED = loc.get_distance_NE(plane.next_WP_loc);
     for (int i = 0; i<2; i++){
         printf("value: %f\n",locationNED[i]);
-    }
+    }*/
 
     float latStateDesired[6] = {1,5,66,85,2,20};
     float lonStateDesired[6] = {1,5,66,85,2,20};
@@ -70,9 +74,6 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
         latError[i] = latState[i] - latStateDesired[i];
         lonError[i] = lonState[i] - lonStateDesired[i];
     }
-
-    latError[5] = locationNED[0];
-    lonError[4] = locationNED[1];
 
     matrixMathFuncs matrixTestObject;
     matrixTestObject.LQTMult(gainsLat,latError,latInput);
