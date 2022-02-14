@@ -1,27 +1,33 @@
 
 #include "mode.h"
 #include "plane.h"
+#include "LQT_Constants.h"
 
-
+//call mode 26 from console to switch to RALPHIE mode//
 void ModeRalphie::run() {
 
     /* For control system -> called from Plane::stablize() in Attitude.cpp line 503 */
     switch (desiredState.phase) {
      
         case FLIGHT_PHASE_CIRCLE:
+            //controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
             break;
       
         case FLIGHT_PHASE_STRAIGHT:
+            //controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
             break;
        
         case FLIGHT_PHASE_SEMI_CIRCLE:
+            //controllerLQT(GAINS_LAT_CURVE,GAINS_LON_CURVE);
             break;
         
         case FLIGHT_PHASE_TRANSITION:
+            //controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
             break;
     }
 
-    crashThePlane();
+    //crashThePlane();
+    //controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
 }
 
 void ModeRalphie::crashThePlane() {
@@ -33,11 +39,63 @@ void ModeRalphie::crashThePlane() {
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 100.0);
 }
 
+void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
+
+    // Function takes in the gain values based on case in switch statement
+
+    float latInput[2];
+    float lonInput[2];
+    float latError[6];
+    float lonError[6];
+
+    // declaring the actual state of the aircraft //
+    //v p r phi psi y
+    float latState[6] = {currentState.velocity.y,currentState.angularVelocity.x,currentState.angularVelocity.z,currentState.roll,currentState.yaw,currentState.position.y};
+    //u w q theta x z
+    float lonState[6] = {currentState.velocity.x,currentState.velocity.z,currentState.angularVelocity.y,currentState.pitch,currentState.position.x,currentState.position.z};
+    
+    // Desired state determined by WARIO algorithm //
+    //NEED TO CHANGE TO WARIO VALUES
+    float latStateDesired[6] = {1,5,66,85,2,20};
+    float lonStateDesired[6] = {1,5,66,85,2,20};
+
+    for (int i = 0; i < 6; i++) {
+        latError[i] = latState[i] - latStateDesired[i];
+        lonError[i] = lonState[i] - lonStateDesired[i];
+    }
+
+    matrixMathFuncs matrixTestObject;
+    matrixTestObject.LQTMult(gainsLat,latError,latInput);
+    matrixTestObject.LQTMult(gainsLon,lonError,lonInput);
+    
+    for (int i = 0; i < 2; i++) {
+        printf("LATERAL: Computed control input in index %d is %f\n",i,latInput[i]);
+    }
+    printf("\n");
+    for (int i = 0; i < 2; i++) {
+        printf("LONGITUDINAL: Computed control input in index %d is %f\n",i,lonInput[i]);
+    }
+
+    /*
+    // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]);
+    */
+
+}
+
 
 bool ModeRalphie::_enter() {
     
     /* Enters the mode, perform tasks that only need to happen on initialization */
     // trajectory.init();
+    printState();
+
+    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+    controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
+
     return true;
 }
 
@@ -70,7 +128,7 @@ void ModeRalphie::navigate() {
     plane.next_WP_loc = plane.prev_WP_loc;
 
     /* Update plane.next_WP_loc, plane.current_loc, plane.prev_WP_loc etc */
-    printf("RALPHIE NAVIGATING\n");
+    //printf("RALPHIE NAVIGATING\n");
 }
 
 
@@ -91,6 +149,7 @@ void ModeRalphie::printState() {
 	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x, 
                                              currentState.angularVelocity.y, 
                                              currentState.angularVelocity.z);
+
 
 }
 

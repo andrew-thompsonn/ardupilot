@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <math.h>
 #include <AP_AHRS/AP_AHRS.h> 
+#include "state_types_ralphie.h"
 
 
 #define WARIO_TRAJECTORY_SIZE   (100)

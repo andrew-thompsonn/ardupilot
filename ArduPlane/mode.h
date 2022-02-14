@@ -8,7 +8,8 @@
 #include <AP_Vehicle/ModeReason.h>
 #include "quadplane.h"
 #include "trajectory.h"
-#include "state_task.h"
+#include "state_types_ralphie.h"
+#include "matrixMath.h"
 
 class AC_PosControl;
 class AC_AttitudeControl_Multi;
@@ -747,6 +748,7 @@ public:
     bool controls=true;
 
     void crashThePlane();
+    void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
 
 protected:
     
