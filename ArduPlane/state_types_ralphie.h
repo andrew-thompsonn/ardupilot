@@ -87,17 +87,3 @@ typedef struct {
 } aircraftState_t;
 
 
-/**
- * @brief Get the Lateral State object
- * 
- * @param state 
- */
-void getLateralState(aircraftState_t state);
-
-/**
- * @brief Get the Longitudinal State object
- * 
- * @param state 
- */
-void getLongitudinalState(aircraftState_t state);
-
