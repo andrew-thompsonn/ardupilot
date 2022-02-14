@@ -3,8 +3,10 @@
 
 #include "state_task.h"
 #include <AP_Math/AP_Math.h>
+#include <stdio.h>
 #include <cstdio>
 #include <math.h>
+#include <AP_AHRS/AP_AHRS.h> 
 
 
 #define WARIO_TRAJECTORY_SIZE   (100)
