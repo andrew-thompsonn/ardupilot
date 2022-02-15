@@ -177,10 +177,24 @@ constexpr int8_t Plane::_failsafe_priorities[6];
     testParameters.initialAngle = 0.00;
     testParameters.targetVelocity = 20.0;
 
-    circleTrajectory.init(testParameters);
-    printf("\nran init()\n");
-    circleTrajectory.update(testParameters);
-    printf("\nran update()\n");
+    Vector3f windEstimate;
+    windEstimate.x = 0;
+    windEstimate.y = 0;
+    windEstimate.z = 0;
+
+    Vector3f pastWindEstimate;
+    pastWindEstimate.x = 0;
+    pastWindEstimate.y = 0;
+    pastWindEstimate.z = 0;
+
+    circleTrajectory.initCircle(testParameters);
+    printf("\nran initCircle()\n");
+    circleTrajectory.initSquircle(testParameters);
+    printf("\nran initSquircle()\n");
+    circleTrajectory.updatePath(testParameters, windEstimate);
+    printf("\nran updatePath()\n");
+    circleTrajectory.updateTransition(testParameters, windEstimate, pastWindEstimate); 
+    printf("\nran updateTransition()\n");
 
  }
 
