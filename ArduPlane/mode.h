@@ -727,7 +727,7 @@ protected:
 
 #define ACTIVE      1
 #define INACTIVE    0
-
+#define UPDATE_FREQUENCY 	400
 
 class ModeRalphie: public Mode {
 
@@ -739,6 +739,7 @@ public:
 
     bool does_auto_throttle()   const override { return true; }
     bool does_auto_navigation() const override { return true; }
+
 
     void run()      override;
     void update()   override;
@@ -757,9 +758,12 @@ protected:
     aircraftState_t currentState;
     aircraftState_t desiredState;
 
+	uint16_t updateCounter;
+
     bool _enter() override;
 
 private:
 
     void printState();
+    void resetUpdateCounter();
 };

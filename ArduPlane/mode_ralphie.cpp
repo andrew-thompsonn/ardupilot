@@ -96,6 +96,9 @@ bool ModeRalphie::_enter() {
     controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
     controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
 
+    plane.next_WP_loc.alt = plane.current_loc.alt;
+	updateCounter = 0;
+
     return true;
 }
 
@@ -112,7 +115,13 @@ void ModeRalphie::update() {
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
 
-    // printState();
+	if (UPDATE_FREQUENCY/4 <= updateCounter++) {
+
+		resetUpdateCounter();
+        Vector3f windEstimate = plane.ahrs.wind_estimate();
+        printf("Updating wind average with vector [%.3f, %.3f, %.3f]\n", windEstimate.x, windEstimate.y, windEstimate.z);
+        trajectory.updateAverageWind(windEstimate);
+	}
 }
 
 
@@ -124,8 +133,10 @@ void ModeRalphie::navigate() {
     
     //trajectory.update();
 
-    plane.current_loc = plane.next_WP_loc;
-    plane.next_WP_loc = plane.prev_WP_loc;
+    plane.nav_roll_cd  = plane.roll_limit_cd / 3;
+    plane.update_load_factor();
+    plane.calc_nav_pitch();
+    plane.calc_throttle();
 
     /* Update plane.next_WP_loc, plane.current_loc, plane.prev_WP_loc etc */
     //printf("RALPHIE NAVIGATING\n");
@@ -154,5 +165,8 @@ void ModeRalphie::printState() {
 }
 
 
+void ModeRalphie::resetUpdateCounter() {
 
+    updateCounter = 0;
+}
 
