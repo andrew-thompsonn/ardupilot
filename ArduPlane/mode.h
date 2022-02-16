@@ -775,6 +775,8 @@ class ModeLQT: public Mode {
 
 public:
 
+    Location loc;
+
     float GAINS_LAT_CIRCLE[2][6] = {
     {0.1338,0.2023,0.4519,4.4355,2.4290,0.0155},
     {0.0852,0.1220,0.2525,2.6521,1.5190,0.0100}

@@ -55,20 +55,10 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     
     // Desired state determined by WARIO algorithm //
     //for testing, use next_wp_loc() to update desired state, probably only going to be able to compare x and y location
-    //Use get_distance_NED from the Location Struct defined in AP_Common->Location.h
-    
-    //printf("state values in x y z: %f %f %f\n",currentState.velocity.x,currentState.velocity.y,currentState.velocity.z);
-    
-    Location loc; // <-- using zero() constructor in Location
-    printf("boolean returned is %d\n", loc.is_zero());
-    
-    /*Vector2f locationNED = loc.get_distance_NE(plane.next_WP_loc);
-    for (int i = 0; i<2; i++){
-        printf("value: %f\n",locationNED[i]);
-    }*/
 
-    float latStateDesired[6] = {1,5,66,85,2,20};
-    float lonStateDesired[6] = {1,5,66,85,2,20};
+    //Treating desired state as movement only in the y direction so everything is held constant except our y position
+    float latStateDesired[6] = {currentState.velocity.y,0,0,0,0,currentState.position.y + 1};
+    float lonStateDesired[6] = {0,0,0,currentState.pitch,currentState.position.x,currentState.position.z};
 
     for (int i = 0; i < 6; i++) {
         latError[i] = latState[i] - latStateDesired[i];
@@ -88,10 +78,10 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     }*/
 
     // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]/1000);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]/1000);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]/1000);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]/1000);
 
 }
 
@@ -100,7 +90,10 @@ bool ModeLQT::_enter() {
     
     /* Enters the mode, perform tasks that only need to happen on initialization */
     // trajectory.init();
-    printState();
+    // printState();
+
+    Location test(currentState.position.y,currentState.position.x,currentState.position.z,Location::AltFrame::ABSOLUTE);
+    loc = test;
 
     /*
     controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
