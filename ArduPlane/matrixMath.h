@@ -14,7 +14,9 @@ class matrixMathFuncs {
         typedef float Ftype;
         #define MAT_ALG_ACCURACY    1e-4f
 
-        void matrixMathTest(int num);
+        matrixMathFuncs();
+
+        bool matrixMathTest(int num);
 
         void LQTMult(float gains[][6], float error[6], float ans[]);
 

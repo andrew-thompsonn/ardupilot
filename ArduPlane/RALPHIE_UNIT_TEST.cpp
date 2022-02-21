@@ -1,6 +1,6 @@
 #include "RALPHIE_UNIT_TEST.h"
 
-void RALPHIEUnitTest::testUNIT(float a, float b) 
+int RALPHIEUnitTest::testUNIT(int a, int b);
 {
     return a + b;
 }

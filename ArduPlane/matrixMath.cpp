@@ -1,6 +1,11 @@
 #include "matrixMath.h"
 
-void matrixMathFuncs::matrixMathTest(int num){
+matrixMathFuncs::matrixMathFuncs()
+{
+    return;
+}
+
+bool matrixMathFuncs::matrixMathTest(int num){
     float ans[2];
     float kValues[2][6] = {
         {0.1338, 0.2023, 0.4519, 4.4355, 2.4290, 0.0155},
@@ -15,7 +20,7 @@ void matrixMathFuncs::matrixMathTest(int num){
         printf("Computed control input in index %d is %f\n",i,ans[i]);
     }
 
-
+    return false;
 }
 
 void matrixMathFuncs::LQTMult(float gains[][6], float error[6], float ans[]) 
