@@ -78,6 +78,7 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     }*/
 
     // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
+    //look into set_output_scaled to see what units should be passed into the channels
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]/1000);
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]/1000);
@@ -116,7 +117,8 @@ void ModeLQT::update() {
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
 
-    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+    //controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+    controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
 
     //printf("printing current waypoint data: %d \n",plane.current_loc.alt);
 
