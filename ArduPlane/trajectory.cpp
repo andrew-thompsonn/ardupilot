@@ -1,39 +1,31 @@
 #include "trajectory.h"
 
-void RalphieTrajectory::init(warioInput_t parameters) {
-// TODO: circle
- 
-   //write vector of angles for circle.
-  
-   float deltaAngle = (2*PI)/WARIO_TRAJECTORY_SIZE;
-   float angles[WARIO_TRAJECTORY_SIZE];
-   float initialAngle = 0.0;
-  // angles[0] = parameters.initialAngle;
-   angles[0] = initialAngle;
-   for (int i = 1; i < WARIO_TRAJECTORY_SIZE; i++){
+void RalphieTrajectory::initCircle(warioInput_t parameters) {
+    //generate initial circular trajectory based off of given radius and central location. 
+    angles[0] = parameters.initialAngle;
+    cRoll = atan2f(powf(parameters.targetVelocity,2),(parameters.rad * 9.81));
+    deltaAngle = (2*PI)/WARIO_TRAJECTORY_SIZE;
+    //generate vector of all angles
+    for (int i = 1; i < WARIO_TRAJECTORY_SIZE; i++){
        angles[i] = angles[i-1] + deltaAngle;
       // printf("Current Angle: %.3f", angles[i]);
-   }
-  
-   //write vectors of positions over path
-   float xPos[WARIO_TRAJECTORY_SIZE];
-   float  yPos[WARIO_TRAJECTORY_SIZE];
-   for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
-   {
-       xPos[i] = (parameters.rad * cosf(angles[i])) + parameters.lat;
-       if (i < WARIO_TRAJECTORY_SIZE/2){
-           yPos[i] = parameters.lon + sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xPos[i] - powf(xPos[i],2) ));
-      }else{
+    }
+    
+    for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
+    {
+        xPos[i] = (parameters.rad * -sinf(angles[i])) + parameters.lat;
+        if (angles[i]<(PI/2)){
+           yPos[i] = (parameters.lon + sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xPos[i] - powf(xPos[i],2) )));
+        }else if (angles[i]<(PI) && angles[i] >= (PI/2)){
            yPos[i] = parameters.lon - sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xPos[i] - powf(xPos[i],2) ));
-       }
-      // printf("Angle: %.3f, Position: %.3f, %.3f\n", angles[i],xPos[i],yPos[i]);
-   }
+        }else if (angles[i]<(3*(PI/2)) && angles[i] >= PI){
+           yPos[i] = parameters.lon - sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xPos[i] - powf(xPos[i],2) ));
+        }else if (angles[i]<(2*PI) && angles[i] >= (3*PI/2)){
+           yPos[i] = parameters.lon + sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xPos[i] - powf(xPos[i],2) ));
+        }
+     
+    }
   
- 
-   //create array of aircraftStates
-   //aircraftState_t circlePoints[WARIO_TRAJECTORY_SIZE];
- 
-    float cRoll;
    //write positions into vector3f for input into aircraft_statet struct.
 
    for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
@@ -41,7 +33,7 @@ void RalphieTrajectory::init(warioInput_t parameters) {
        waypoints[i].position.x = xPos[i];
        waypoints[i].position.y = yPos[i];
        waypoints[i].position.z = parameters.maxAlt;
-
+   // printf("Angle: %.3f, Position: %.3f, %.3f\n", angles[i],waypoints[i].position.x,waypoints[i].position.y );
    //velocities into array of aircraft_statet
 
        waypoints[i].velocity.x = parameters.targetVelocity;
@@ -55,24 +47,41 @@ void RalphieTrajectory::init(warioInput_t parameters) {
        waypoints[i].angularVelocity.z = 0.0;
 
    //euler angles into aircraftstate array
-
-       cRoll = atan2f(powf(parameters.targetVelocity,2),(parameters.rad * 9.81));
        waypoints[i].roll = cRoll;
        waypoints[i].pitch= 0.0;
        waypoints[i].yaw= 0.0;
 
-      // printf("X loc: %.7f, Y loc: %.7f, index: %.3d\n", waypoints[i].position.x,waypoints[i].position.y,i);
+    //set phase type of each waypoint
+        waypoints[i].phase = FLIGHT_PHASE_CIRCLE;
+
+    //printf("X loc: %.7f, Y loc: %.7f, index: %.3d\n", waypoints[i].position.x,waypoints[i].position.y,i);
    }
  
-   //waypoints = circlePoints;
- 
-   // (x - xc)^2 + (y - yc)^2 = r^2   
   
 
-    printf("\nInnit generated circle\n");
+    //printf("\nInnit generated circle\n");
 }
 
 
+void RalphieTrajectory::initSquircle(warioInput_t parameters) {
+    //printf("\nStart of initSquircle\n");
+    majorAxis = parameters.rad;
+    radiusFactor = 7.0;
+    minorAxis = majorAxis/radiusFactor;
+    straightDistance = 4 * (majorAxis - minorAxis);
+    circleDistance = 2 * PI * minorAxis;
+    totalDistance = straightDistance + circleDistance;
+    distanceBetweenWaypoints = totalDistance / WARIO_TRAJECTORY_SIZE;
+
+    deltaAngleFirstQuarterCircle = ((PI/2) / wpOnFirstQuarterCircle);
+    deltaAngleSecondQuarterCircle = ((PI/2) / wpOnSecondQuarterCircle);
+    deltaAngleHalfCircle = ((PI) / wpOnHalfCircle);
+    yDeltaFirstStraight = ((minorAxis - majorAxis) - (majorAxis - minorAxis))/wpOnFirstStraightLine;
+    yDeltaSecondStraight = ((majorAxis - minorAxis) - (minorAxis - majorAxis))/wpOnSecondStraightLine;
+
+
+    angleFirstQuarterCircle[0] = 0.0;
+    
 void RalphieTrajectory::update(warioInput_t parameters) {
     // TODO: wario
     //Pull updated wind data from currentWindEstimate
@@ -110,35 +119,33 @@ void RalphieTrajectory::update(warioInput_t parameters) {
     float angleHalfCircle[wpOnHalfCircle];
 
     angleFirstQuarterCircle[0] = (PI/2);
+    
     for (int i = 1; i < wpOnFirstQuarterCircle; i++){
         angleFirstQuarterCircle[i] = angleFirstQuarterCircle[i-1] + deltaAngleFirstQuarterCircle; 
     }
 
-    angleSecondQuarterCircle[0] = deltaAngleSecondQuarterCircle;
+    angleSecondQuarterCircle[0] = 0.0;
     for (int i = 1; i < wpOnSecondQuarterCircle; i++){
         angleSecondQuarterCircle[i] = angleSecondQuarterCircle[i-1] + deltaAngleSecondQuarterCircle; 
     }
 
-    angleHalfCircle[0] = PI + deltaAngleHalfCircle;
+    angleHalfCircle[0] = PI;
      for (int i = 1; i < wpOnHalfCircle; i++){
         angleHalfCircle[i] = angleHalfCircle[i-1] + deltaAngleHalfCircle; 
     }
-    //printf("\nangle vector generated\n");
-    //solve x values
-    float xFirstQuarterCircle[wpOnFirstQuarterCircle];
-    float xSecondQuarterCircle[wpOnSecondQuarterCircle];
-    float xHalfCircle[wpOnHalfCircle];
-    float xFirstStraightLine[wpOnFirstStraightLine];
-    float xSecondStraightLine[wpOnSecondStraightLine];
+  
 
     for (int i = 0; i < wpOnFirstQuarterCircle; i++){
-        xFirstQuarterCircle[i] = parameters.lat + (minorAxis * cosf(angleFirstQuarterCircle[i])); 
+        xFirstQuarterCircle[i] = parameters.lat + (minorAxis * -(sinf(angleFirstQuarterCircle[i]))); 
+        yFirstQuarterCircle[i] = parameters.lon + sqrtf(-(powf(parameters.lat,2) ) + powf(minorAxis,2) + (2 * parameters.lat * xFirstQuarterCircle[i]) - (powf(xFirstQuarterCircle[i],2)) ) + majorAxis - minorAxis;
     }
      for (int i = 0; i < wpOnSecondQuarterCircle; i++){
-        xSecondQuarterCircle[i] = parameters.lat + (minorAxis * cosf(angleSecondQuarterCircle[i])); 
+        xSecondQuarterCircle[i] = parameters.lat + (minorAxis * cosf(angleSecondQuarterCircle[i]));
+        ySecondQuarterCircle[i] = parameters.lon + sqrtf(-(powf(parameters.lat,2) ) + powf(minorAxis,2) + (2 * parameters.lat * xSecondQuarterCircle[i]) - (powf(xSecondQuarterCircle[i],2)) ) + majorAxis - minorAxis; 
     }
      for (int i = 0; i < wpOnHalfCircle; i++){
         xHalfCircle[i] = parameters.lat + (minorAxis * cosf(angleHalfCircle[i])); 
+        yHalfCircle[i] = parameters.lon - sqrtf(-(powf(parameters.lat,2) ) + powf(minorAxis,2) + (2 * parameters.lat * xHalfCircle[i]) - (powf(xHalfCircle[i],2)) ) - majorAxis + minorAxis;
     }
      for (int i = 0; i < wpOnFirstStraightLine; i++){
         xFirstStraightLine[i] = parameters.lat - minorAxis;
@@ -148,12 +155,6 @@ void RalphieTrajectory::update(warioInput_t parameters) {
     }
     //printf("\nX vector generated\n");
 
-    //solve y values
-    float yFirstQuarterCircle[wpOnFirstQuarterCircle];
-    float ySecondQuarterCircle[wpOnSecondQuarterCircle];
-    float yHalfCircle[wpOnHalfCircle];
-    float yFirstStraightLine[wpOnFirstStraightLine];
-    float ySecondStraightLine[wpOnSecondStraightLine];
 
     for (int i = 0; i < wpOnFirstQuarterCircle; i++){
         yFirstQuarterCircle[i] = parameters.lon + sqrtf(-(powf(parameters.lat,2) ) + powf(minorAxis,2) + (2 * parameters.lat * xFirstQuarterCircle[i]) - (powf(xFirstQuarterCircle[i],2)) ) + majorAxis - minorAxis;
@@ -165,8 +166,6 @@ void RalphieTrajectory::update(warioInput_t parameters) {
         yHalfCircle[i] = parameters.lon - sqrtf(-(powf(parameters.lat,2) ) + powf(minorAxis,2) + (2 * parameters.lat * xHalfCircle[i]) - (powf(xHalfCircle[i],2)) ) - majorAxis + minorAxis;
     }
 
-    float yDeltaFirstStraight = ((minorAxis - majorAxis) - (majorAxis - minorAxis))/wpOnFirstStraightLine;
-    float yDeltaSecondStraight = ((majorAxis - minorAxis) - (minorAxis - majorAxis))/wpOnSecondStraightLine;
     yFirstStraightLine[0] = parameters.lon + majorAxis - minorAxis;
     ySecondStraightLine[0] = parameters.lon + minorAxis - majorAxis;
 
@@ -177,10 +176,6 @@ void RalphieTrajectory::update(warioInput_t parameters) {
         ySecondStraightLine[i] = ySecondStraightLine[i-1] + yDeltaSecondStraight;
     } 
     //printf("\ny vector generated\n");
-
-    //create full position vectors
-    float xPosition[WARIO_TRAJECTORY_SIZE];
-    float yPosition[WARIO_TRAJECTORY_SIZE];
 
     for (int i = 0; i < wpOnFirstQuarterCircle; i++){
         xPosition[i] = xFirstQuarterCircle[i];
@@ -208,110 +203,214 @@ void RalphieTrajectory::update(warioInput_t parameters) {
         //printf("Second quarter: X loc: %.3f, Y loc: %.3f, index: %.3d\n", xPosition[i],yPosition[i],i);
     }
 
-    //print out squircle data points
-   // for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-   //  printf("X loc: %.3f, Y loc: %.3f, index: %.3d\n", xPosition[i],yPosition[i],i);
-   // }
-
-
-    //Calculate Aircraft State;
-    float cRollS;
-   //write positions into vector3f for input into aircraft_statet struct.
 
    for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++)
    {
-       waypoints[i].position.x = xPosition[i];
-       waypoints[i].position.y = yPosition[i];
-       waypoints[i].position.z = parameters.maxAlt;
+       waypointsSquircle[i].position.x = xPosition[i];
+       waypointsSquircle[i].position.y = yPosition[i];
+       waypointsSquircle[i].position.z = parameters.maxAlt;
 
    //velocities into array of aircraft_statet
 
-       waypoints[i].velocity.x = parameters.targetVelocity;
-       waypoints[i].velocity.y = 0.0;
-       waypoints[i].velocity.z = 0.0;
+       waypointsSquircle[i].velocity.x = parameters.targetVelocity;
+       waypointsSquircle[i].velocity.y = 0.0;
+       waypointsSquircle[i].velocity.z = 0.0;
  
    //angular rates into aircraftstate array
    
-       waypoints[i].angularVelocity.x = 0.0;
-       waypoints[i].angularVelocity.y = 0.0;
-       waypoints[i].angularVelocity.z = 0.0;
+       waypointsSquircle[i].angularVelocity.x = 0.0;
+       waypointsSquircle[i].angularVelocity.y = 0.0;
+       waypointsSquircle[i].angularVelocity.z = 0.0;
+
+    
 
    }
    //euler angles into aircraftstate array
 
     cRollS = atan2f(powf(parameters.targetVelocity,2),(minorAxis * 9.81));
     for (int i = 0; i < wpOnFirstQuarterCircle; i++){
-        waypoints[i].roll = cRollS;
-        waypoints[i].pitch= 0.0;
-        waypoints[i].yaw= 0.0;
+        waypointsSquircle[i].roll = cRollS;
+        waypointsSquircle[i].pitch= 0.0;
+        waypointsSquircle[i].yaw= 0.0;
+        waypointsSquircle[i].phase = FLIGHT_PHASE_SEMI_CIRCLE;
     }
     for (int i = wpOnFirstQuarterCircle; i < wpOnFirstQuarterCircle + wpOnFirstStraightLine; i++){
-        waypoints[i].roll = 0.0;
-        waypoints[i].pitch= 0.0;
-        waypoints[i].yaw= 0.0;
+        waypointsSquircle[i].roll = 0.0;
+        waypointsSquircle[i].pitch= 0.0;
+        waypointsSquircle[i].yaw= 0.0;
+        waypointsSquircle[i].phase = FLIGHT_PHASE_STRAIGHT;
     }
     for (int i = wpOnFirstQuarterCircle + wpOnFirstStraightLine; i < wpOnFirstQuarterCircle + wpOnFirstStraightLine + wpOnHalfCircle; i++){
-        waypoints[i].roll = cRollS;
-        waypoints[i].pitch= 0.0;
-        waypoints[i].yaw= 0.0;
+        waypointsSquircle[i].roll = cRollS;
+        waypointsSquircle[i].pitch= 0.0;
+        waypointsSquircle[i].yaw= 0.0;
+        waypointsSquircle[i].phase = FLIGHT_PHASE_SEMI_CIRCLE;
     }
      for (int i = wpOnFirstQuarterCircle + wpOnFirstStraightLine + wpOnHalfCircle; i < wpOnFirstQuarterCircle + wpOnFirstStraightLine + wpOnHalfCircle + wpOnSecondStraightLine; i++){
-        waypoints[i].roll = 0.0;
-        waypoints[i].pitch= 0.0;
-        waypoints[i].yaw= 0.0;
+        waypointsSquircle[i].roll = 0.0;
+        waypointsSquircle[i].pitch= 0.0;
+        waypointsSquircle[i].yaw= 0.0;
+        waypointsSquircle[i].phase = FLIGHT_PHASE_STRAIGHT;
     }
     for (int i = wpOnFirstQuarterCircle + wpOnFirstStraightLine + wpOnHalfCircle + wpOnSecondStraightLine; i < wpOnFirstQuarterCircle + wpOnFirstStraightLine + wpOnHalfCircle + wpOnSecondStraightLine + wpOnSecondQuarterCircle; i++){
-        waypoints[i].roll = cRollS;
-        waypoints[i].pitch= 0.0;
-        waypoints[i].yaw= 0.0;
+        waypointsSquircle[i].roll = cRollS;
+        waypointsSquircle[i].pitch= 0.0;
+        waypointsSquircle[i].yaw= 0.0;
+        waypointsSquircle[i].phase = FLIGHT_PHASE_SEMI_CIRCLE;
     }
-    
-    //rotate default squircle trajectory into a target direction around center location. 
+    //printf("\nEnd of initSquircle\n");
+}
+
+ void RalphieTrajectory::updateTransition(warioInput_t parameters){
+    // printf("\nStart of updateTransition\n");
     //rotation angle defined as angle of rotation counterclockwise from 0  to final starting angle to next squircle. 
-    float rotationAngle = PI ;
+    //rotationAngle = tanf(windEstimate.x/windEstimate.y)
+    rotationAngle = PI ;
 
     //generate transition path 
-    float initialAngle = 0;  //previous wind/squircle direction
-    float finalAngle = rotationAngle; 
-    float deltaAngle = (2*PI)/WARIO_TRAJECTORY_SIZE;
-    int transitionSize = floorf((finalAngle-initialAngle)/deltaAngle);
-     if (rotationAngle < initialAngle){
-        transitionSize = floorf((2*PI - initialAngle)+ rotationAngle);
+    startAngle = PI/2;  //previous wind/squircle direction
+    finalAngle = rotationAngle; 
+    deltaAngle = (2*PI)/WARIO_TRAJECTORY_SIZE;
+     if (finalAngle < startAngle){
+        transitionSize = ceilf(((2*PI - startAngle)+ rotationAngle)/deltaAngle);
+    }else{
+        transitionSize = ceilf((finalAngle-startAngle)/deltaAngle);
     }
-     printf("initial Angle: %.3f, final Angle: %.3f, transition size: %.3d\n", initialAngle, finalAngle, transitionSize); 
-    float xTransition[transitionSize];
-    float yTransition[transitionSize];
-   for (int i = 0; i < transitionSize; i++)
-   {
-       xTransition[i] = (parameters.rad * cosf((initialAngle + (i * deltaAngle)))) + parameters.lat;
-       if ((initialAngle + (i * deltaAngle)) < (PI)){
-           yTransition[i] = parameters.lon + sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xTransition[i] - powf(xTransition[i],2) ));
-      }else{
-           yTransition[i] = parameters.lon - sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*xTransition[i] - powf(xTransition[i],2) ));
-       }
-     printf("Angle: %.3f, Position: %.3f, %.3f\n",(initialAngle + (i * deltaAngle)) ,xTransition[i],yTransition[i]);
+    //printf("initial Angle: %.3f, final Angle: %.3f, transition size: %.3f\n", startAngle, finalAngle, transitionSize); 
+    cRoll = atan2f(powf(parameters.targetVelocity,2),(parameters.rad * 9.81));
+    for (int i = 0; i < transitionSize; i++)
+    {   
+        if ((startAngle + (i * deltaAngle)) < (2*PI)){
+            currentAngle = (startAngle + (i * deltaAngle));
+        }else{
+            currentAngle = (startAngle + (i * deltaAngle) - (2*PI));
+        }
+        waypointsTransition[i].position.x = (parameters.rad * -sinf(currentAngle)) + parameters.lat;
+        if (currentAngle < (PI/2)){
+           waypointsTransition[i].position.y = parameters.lon + sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*(waypointsTransition[i].position.x) - powf(waypointsTransition[i].position.x,2) ));
+        }else if (currentAngle<(PI) && currentAngle >= (PI/2) ){
+           waypointsTransition[i].position.y = parameters.lon - sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*(waypointsTransition[i].position.x) - powf(waypointsTransition[i].position.x,2) ));
+        }else if (currentAngle<(3*(PI/2)) && currentAngle >= (PI) ){
+           waypointsTransition[i].position.y = parameters.lon - sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*(waypointsTransition[i].position.x) - powf(waypointsTransition[i].position.x,2) ));
+        }else if (currentAngle<(2*PI) && currentAngle >= (3*(PI/2)) ){
+           waypointsTransition[i].position.y = parameters.lon + sqrtf((-(powf(parameters.lat,2)) + (powf(parameters.rad,2)) + 2*parameters.lat*(waypointsTransition[i].position.x) - powf(waypointsTransition[i].position.x,2) ));
+        }
+    // printf("Angle: %.3f, Position: %.3f, %.3f\n",currentAngle, waypointsTransition[i].position.x, waypointsTransition[i].position.y);
+
+        waypointsTransition[i].position.z = parameters.maxAlt;
+
+   //velocities into array of aircraft_statet
+
+       waypointsTransition[i].velocity.x = parameters.targetVelocity;
+       waypointsTransition[i].velocity.y = 0.0;
+       waypointsTransition[i].velocity.z = 0.0;
+   //angular rates into aircraftstate array
+       waypointsTransition[i].angularVelocity.x = 0.0;
+       waypointsTransition[i].angularVelocity.y = 0.0;
+       waypointsTransition[i].angularVelocity.z = 0.0;
+   //euler angles into aircraftstate array
+
+       waypointsTransition[i].roll = cRoll;
+       waypointsTransition[i].pitch= 0.0;
+       waypointsTransition[i].yaw= 0.0;
+
+    //set phase type of each waypoint
+       waypoints[i].phase = FLIGHT_PHASE_TRANSITION;
+
    }
 
+ }
+void RalphieTrajectory::updatePath(warioInput_t parameters, Vector3f windEstimate) {
+  
+    // float rotationAngle = tanf(windEstimate.x/windEstimate.y); 
+    rotationAngle = PI/2;
 
+    for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
+        waypointsRotated[i].position.x = (cosf(rotationAngle)*waypointsSquircle[i].position.x - sinf(rotationAngle)*waypointsSquircle[i].position.y);
+        waypointsRotated[i].position.y = (sinf(rotationAngle)*waypointsSquircle[i].position.x + cosf(rotationAngle)*waypointsSquircle[i].position.y);
+        printf("X loc: %.3f, Y loc: %.3f, index: %.3d\n", waypointsRotated[i].position.x,waypointsRotated[i].position.y,i);
 
-    int lengthS = 98;
-    
-     //create full position vectors
-    float xPositionRotated[lengthS];
-    float yPositionRotated[lengthS];
-    for (int i = 0; i < lengthS; i++){
-        xPositionRotated[i] = cosf(rotationAngle)*xPosition[i] + sinf(rotationAngle)*yPosition[i];
-        yPositionRotated[i] = (-1) * sinf(rotationAngle)*xPosition[i] + cosf(rotationAngle)*yPosition[i];
-       printf("X loc: %.3f, Y loc: %.3f, index: %.3d\n", xPositionRotated[i],yPositionRotated[i],i);
+        waypointsRotated[i].position.z = waypointsSquircle[i].position.z;
+        waypointsRotated[i].velocity.x = waypointsSquircle[i].velocity.x;
+        waypointsRotated[i].velocity.y = waypointsSquircle[i].velocity.y;
+        waypointsRotated[i].velocity.z = waypointsSquircle[i].velocity.z;
+        waypointsRotated[i].angularVelocity.x = waypointsSquircle[i].angularVelocity.x;
+        waypointsRotated[i].angularVelocity.y = waypointsSquircle[i].angularVelocity.y;
+        waypointsRotated[i].angularVelocity.z = waypointsSquircle[i].angularVelocity.z;
+        waypointsRotated[i].roll = waypointsSquircle[i].roll;
+        waypointsRotated[i].pitch = waypointsSquircle[i].pitch;
+        waypointsRotated[i].yaw= waypointsSquircle[i].yaw;
+        waypointsRotated[i].phase = waypointsSquircle[i].phase;
     }
 
-
-
- 
     
 }
 
+void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
+	// grab wind data
+	Vector3f wind = AP::ahrs().wind_estimate();
+	float angle;
+	unsigned int startTime = 100; // 135sec when taking real data
+	unsigned int endTime = 250; // 255sec when taking real data
+	// statics just so they don't get overwritten each time - i think idk - it is working that's what matters - probably bad coding practice
+	static std::vector<float> windVec;
+	static std::vector<float> averageWindSpeedVec = {0};
+	static std::vector<float> angleVec;
+	static std::vector<float> averageAngleVec = {0};
+	// kept getting divide by 0 errors - this seems to fix it
+	wind.y = wind.y + 0.0000000000000000001;
+	// find angle every time step
+	angle = atan(wind.x / wind.y)*180/3.14; 	// if angle = 0 -> wind is blowing from the north
+																					 // if angle = 90 -> wind is blowing FROM the east TO the west
+	// print the x and y speeds to monitor
+	printf("Wind: %.3f m/s, %.3f m/s   ", wind.x, wind.y); // if x = positive value -> wind is blowing TO the north FROM the south
+																												// if y = positive value -> wind is blowing TO the east FROM the west
 
+	// output the direciton based on sign of vectors components
+	if (wind.x < 0 && wind.y < 0){ // wind from the NW --- no correction needed
+	} else if (wind.x > 0 && wind.y < 0){ // wind from the SW
+		angle = angle + 180;
+	} else if (wind.x > 0 && wind.y > 0) { // wind from the SE
+		angle = angle + 180;
+	} else if (wind.x < 0 && wind.y > 0 ){ // wind from the NE
+		angle = angle + 360;
+	}
+	// track number of seconds the plane has been ARMED
+	static unsigned int callCount = 0;
+	if (AP::arming().is_armed() == 1){
+		callCount++;
+	}
+	// monitor the time
+	printf("# of times called: %.4u \n", callCount);
+	// initialize average data points
+	static float averageWindSpeed = 0.0;
+	static float averageAngle = 0.0;
+	// assign an area to take data --- using the amount of times the whole functioned has been called
+	if (callCount > startTime && callCount < endTime){ // 2:15 for max overshoot angle -> call count = 135 // 4:15 for max overcorrection angle -> call count = 255
+		// attach each new wind and angle data point to a vector
+		windVec.push_back(sqrtf(pow(wind.x,2)+pow(wind.y,2))); // taking magnitude of wind
+		angleVec.push_back(angle);
+		for (float j = 0; j < windVec.size(); j++) {
+			// add each wind speed
+			averageWindSpeed = averageWindSpeed + windVec[j];
+			averageAngle = averageAngle + angleVec[j];
+		}
+		// calcaulte average wind speed over the above data collection time frame
+		averageWindSpeed = averageWindSpeed / windVec.size();
+		averageAngle = averageAngle / angleVec.size();
+	}
+	// once we reach the end of data period - reset and push the new average to the vector
+	if (callCount > endTime){
+		callCount = 0;
+		averageWindSpeedVec.push_back(averageWindSpeed);
+		averageAngleVec.push_back(averageAngle);
+	}
+	// average wind speed and direction for each data collection time frame - printing from the back where the new value is pushed
+	printf("Average Wind Speed and Direction: %.3f m/s --- %.3f degrees CW from North ", averageWindSpeedVec.back(), averageAngleVec.back());
+	currentWindSpeedEstimate = averageWindSpeedVec.back();
+	currentWindDirectionEstimate = averageAngleVec.back();
+    memcpy(&currentWindEstimate, &windEstimate, sizeof(Vector3f));
+ 
 void RalphieTrajectory::updateAverageWind(Vector3f measurement) {
 
     /* If we haven't filled the buffer with wind samples yet, fill the buffer */
