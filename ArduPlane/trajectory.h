@@ -1,8 +1,6 @@
 #ifndef _RALPHIE_TRAJECTORY_H_
 #define _RALPHIE_TRAJECTORY_H_
 
-
-
 #include <AP_Math/AP_Math.h>
 #include <stdio.h>
 #include <cstdio>
@@ -20,6 +18,9 @@
 
 
 #define PI (3.14159265)
+#define WIND_BUFFER_SIZE (20)
+
+
 typedef struct {
 
 	float lat;
@@ -39,10 +40,22 @@ typedef struct {
 class RalphieTrajectory {
 
     /**
-     * @brief The current estimation of wind direction
+     * @brief The current estimation of wind vector
      * 
      */
     Vector3f currentWindEstimate;
+
+    /**
+     * @brief The current estimation of wind direction 
+     * 
+     */
+    float currentWindAngleEstimate;
+
+    /**
+     * @brief Index to keep track of wind averaging operations
+     * 
+     */
+    uint16_t windBufferIndex=0;
 
     /**
      * @brief Array of aircraft states representing the trajectory
@@ -69,8 +82,22 @@ class RalphieTrajectory {
     aircraftState_t waypointsRotated[WARIO_TRAJECTORY_SIZE];
 
 
+     * @brief Array of wind vectors
+     * 
+     */
+    Vector3f windBuffer[WIND_BUFFER_SIZE];
 
+    /**
+     * @brief Number of measurements in the wind buffer 
+     * 
+     */
+    uint16_t windSamples;
 
+    /**
+     * @brief Average the current contents of the wind buffer
+     * 
+     */
+    void averageWind();
 
 public:
 
@@ -99,11 +126,17 @@ public:
     void updateTransition(warioInput_t parameters, Vector3f windEstimate, Vector3f pastWindEstimate);
 
     /**
-     * @brief Set the current wind estimate
+     * @brief Update the rolling average for the wind estimate
      * 
-     * @param windEstimate 
+     * @param newMeasurement 
      */
-    void setCurrentWind(Vector3f windEstimate);
+    void updateAverageWind(Vector3f newMeasurement);
+
+    /**
+     * @brief Write over all values in the wind buffer
+     * 
+     */
+    void resetWindAverage();
 
 
     // Define init circle variables and arrays. 

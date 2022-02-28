@@ -81,6 +81,45 @@ void RalphieTrajectory::initSquircle(warioInput_t parameters) {
 
 
     angleFirstQuarterCircle[0] = 0.0;
+    
+void RalphieTrajectory::update(warioInput_t parameters) {
+    // TODO: wario
+    //Pull updated wind data from currentWindEstimate
+    //setCurrentWind(currentWindEstimate);
+    // printf("\nStart of update\n");
+    float radiusFactor = 7.0;
+    float majorAxis = parameters.rad;
+    float minorAxis = majorAxis / radiusFactor;
+    return;
+
+    //calculate total distance of shape. 
+    float circleDistance = 2 * PI * minorAxis;
+    float straightDistance = 4 * (majorAxis - minorAxis);
+    float totalDistance = circleDistance + straightDistance;
+
+    //Distance between waypoints
+    float distanceBetweenWaypoints = totalDistance / WARIO_TRAJECTORY_SIZE;
+    //printf("\nfloor test\n");
+
+    //calculate percentage of waypoints per section. 
+    int wpOnFirstQuarterCircle = floorf(circleDistance / (4 * distanceBetweenWaypoints));
+    int wpOnFirstStraightLine = floorf(straightDistance / (2 * distanceBetweenWaypoints));
+    int wpOnHalfCircle = floorf(circleDistance / (2 * distanceBetweenWaypoints));
+    int wpOnSecondStraightLine = floorf(straightDistance / (2 * distanceBetweenWaypoints));
+    int wpOnSecondQuarterCircle = wpOnFirstQuarterCircle;
+
+    //calculate delta range of angles needed. 
+    float deltaAngleFirstQuarterCircle = ((PI/2) / wpOnFirstQuarterCircle);
+    float deltaAngleSecondQuarterCircle = ((PI/2) / wpOnSecondQuarterCircle);
+    float deltaAngleHalfCircle = ((PI) / wpOnHalfCircle);
+
+    //calculate range of angles vector
+    float angleFirstQuarterCircle[wpOnFirstQuarterCircle];
+    float angleSecondQuarterCircle[wpOnSecondQuarterCircle];
+    float angleHalfCircle[wpOnHalfCircle];
+
+    angleFirstQuarterCircle[0] = (PI/2);
+    
     for (int i = 1; i < wpOnFirstQuarterCircle; i++){
         angleFirstQuarterCircle[i] = angleFirstQuarterCircle[i-1] + deltaAngleFirstQuarterCircle; 
     }
@@ -307,7 +346,6 @@ void RalphieTrajectory::updatePath(warioInput_t parameters, Vector3f windEstimat
     
 }
 
-
 void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
 	// grab wind data
 	Vector3f wind = AP::ahrs().wind_estimate();
@@ -373,5 +411,44 @@ void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
 	currentWindDirectionEstimate = averageAngleVec.back();
     memcpy(&currentWindEstimate, &windEstimate, sizeof(Vector3f));
  
+void RalphieTrajectory::updateAverageWind(Vector3f measurement) {
 
+    /* If we haven't filled the buffer with wind samples yet, fill the buffer */
+    if (windSamples < WIND_BUFFER_SIZE) 
+        memcpy(&windBuffer[windSamples++], &measurement, sizeof(Vector3f));
+
+    /* If the buffer is already full, replace the oldest sample with the new sample */
+    else
+        memcpy(&windBuffer[windBufferIndex++], &measurement, sizeof(Vector3f));
+
+    /* Roll index over */
+    if (WIND_BUFFER_SIZE == windBufferIndex) 
+        windBufferIndex = 0;
+
+    /* Average the contents of the buffer */
+    averageWind(); 
 }
+
+
+void RalphieTrajectory::averageWind() {
+
+    /* Sum every vector in the buffer */
+    Vector3f sum;
+    for (uint8_t index = 0; index < windSamples; index++) 
+        sum += windBuffer[index];
+
+    /* Use the sum to compute the average vector and angle */
+    currentWindEstimate = sum / WIND_BUFFER_SIZE;
+    currentWindAngleEstimate = RAD_TO_DEG * atanF(currentWindEstimate.y / currentWindEstimate.x);
+
+    printf("Estimated wind direction: %.3f\n", currentWindAngleEstimate);
+}
+
+
+void RalphieTrajectory::resetWindAverage() {
+
+    windSamples = 0;
+}
+
+
+

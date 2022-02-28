@@ -163,7 +163,7 @@ constexpr int8_t Plane::_failsafe_priorities[6];
 
  void Plane::update_trajectory() {
 
-     printf("\nIn trajectory task\n");
+    //  printf("\nIn trajectory task\n");
 
  
     //test parameters for init
