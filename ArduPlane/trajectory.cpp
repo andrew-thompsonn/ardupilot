@@ -77,10 +77,11 @@ void RalphieTrajectory::update(warioInput_t parameters) {
     // TODO: wario
     //Pull updated wind data from currentWindEstimate
     //setCurrentWind(currentWindEstimate);
-    printf("\nStart of update\n");
+    // printf("\nStart of update\n");
     float radiusFactor = 7.0;
     float majorAxis = parameters.rad;
     float minorAxis = majorAxis / radiusFactor;
+    return;
 
     //calculate total distance of shape. 
     float circleDistance = 2 * PI * minorAxis;
@@ -311,9 +312,44 @@ void RalphieTrajectory::update(warioInput_t parameters) {
 }
 
 
-void RalphieTrajectory::setCurrentWind(Vector3f windEstimate) {
+void RalphieTrajectory::updateAverageWind(Vector3f measurement) {
 
- 
-	
-    memcpy(&currentWindEstimate, &windEstimate, sizeof(Vector3f));
+    /* If we haven't filled the buffer with wind samples yet, fill the buffer */
+    if (windSamples < WIND_BUFFER_SIZE) 
+        memcpy(&windBuffer[windSamples++], &measurement, sizeof(Vector3f));
+
+    /* If the buffer is already full, replace the oldest sample with the new sample */
+    else
+        memcpy(&windBuffer[windBufferIndex++], &measurement, sizeof(Vector3f));
+
+    /* Roll index over */
+    if (WIND_BUFFER_SIZE == windBufferIndex) 
+        windBufferIndex = 0;
+
+    /* Average the contents of the buffer */
+    averageWind(); 
 }
+
+
+void RalphieTrajectory::averageWind() {
+
+    /* Sum every vector in the buffer */
+    Vector3f sum;
+    for (uint8_t index = 0; index < windSamples; index++) 
+        sum += windBuffer[index];
+
+    /* Use the sum to compute the average vector and angle */
+    currentWindEstimate = sum / WIND_BUFFER_SIZE;
+    currentWindAngleEstimate = RAD_TO_DEG * atanF(currentWindEstimate.y / currentWindEstimate.x);
+
+    printf("Estimated wind direction: %.3f\n", currentWindAngleEstimate);
+}
+
+
+void RalphieTrajectory::resetWindAverage() {
+
+    windSamples = 0;
+}
+
+
+
