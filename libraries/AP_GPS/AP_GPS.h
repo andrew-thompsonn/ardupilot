@@ -20,7 +20,6 @@
 #include <AP_Common/Location.h>
 #include <AP_Param/AP_Param.h>
 #include "GPS_detect_state.h"
-#include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_MSP/msp.h>
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 
@@ -194,7 +193,8 @@ public:
         bool have_gps_yaw;                ///< does GPS give yaw? Set to true only once available.
         bool have_gps_yaw_accuracy;       ///< does the GPS give a heading accuracy estimate? Set to true only once available
         uint32_t last_gps_time_ms;          ///< the system time we got the last GPS timestamp, milliseconds
-        uint32_t uart_timestamp_ms;         ///< optional timestamp from set_uart_timestamp()
+        uint64_t last_corrected_gps_time_us;///< the system time we got the last corrected GPS timestamp, microseconds
+        bool corrected_timestamp_updated;  ///< true if the corrected timestamp has been updated
         uint32_t lagged_sample_count;       ///< number of samples with 50ms more lag than expected
 
         // all the following fields must only all be filled by RTK capable backend drivers
@@ -218,7 +218,7 @@ public:
     };
 
     /// Startup initialisation.
-    void init(const AP_SerialManager& serial_manager);
+    void init(const class AP_SerialManager& serial_manager);
 
     /// Update GPS state based on possible bytes received from the module.
     /// This routine must be called periodically (typically at 10Hz or
@@ -478,8 +478,13 @@ public:
         return time_epoch_usec(primary_instance);
     }
 
+    uint64_t last_message_epoch_usec(uint8_t instance) const;
+    uint64_t last_message_epoch_usec() const {
+        return last_message_epoch_usec(primary_instance);
+    }
+
     // convert GPS week and millis to unix epoch in ms
-    static uint64_t time_epoch_convert(uint16_t gps_week, uint32_t gps_ms);
+    static uint64_t istate_time_to_epoch_ms(uint16_t gps_week, uint32_t gps_ms);
 
     static const struct AP_Param::GroupInfo var_info[];
 

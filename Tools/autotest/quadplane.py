@@ -324,11 +324,7 @@ class AutoTestQuadPlane(AutoTest):
         return self.enum_state_name("MAV_LANDED_STATE", state, pretrim="MAV_LANDED_STATE_")
 
     def assert_extended_sys_state(self, vtol_state, landed_state):
-        m = self.mav.recv_match(type='EXTENDED_SYS_STATE',
-                                blocking=True,
-                                timeout=1)
-        if m is None:
-            raise NotAchievedException("Did not get extended_sys_state message")
+        m = self.assert_receive_message('EXTENDED_SYS_STATE', timeout=1)
         if m.vtol_state != vtol_state:
             raise ValueError("Bad MAV_VTOL_STATE.  Want=%s got=%s" %
                              (self.vtol_state_name(vtol_state),
@@ -715,6 +711,27 @@ class AutoTestQuadPlane(AutoTest):
         self.set_rc(4, 1500)
         self.do_RTL()
 
+    def weathervane_test(self):
+        # We test nose into wind code paths and yaw direction in copter autotest,
+        # so we shall test the side into wind yaw direction and plane code paths here.
+        self.set_parameters({"SIM_WIND_SPD": 10,
+                             "SIM_WIND_DIR": 240,
+                             "Q_WVANE_ENABLE": 3, # WVANE_ENABLE = 3 gives direction of side into wind
+                             "Q_WVANE_GAIN": 3,
+                             "STICK_MIXING": 0})
+
+        self.takeoff(10, mode="QLOITER")
+
+        # Turn aircraft to heading 90 deg
+        self.set_rc(4, 1700)
+        self.wait_heading(90)
+        self.set_rc(4, 1500)
+
+        # Now wait for weathervaning to activate and turn side-on to wind at 240 deg therefore heading 150 deg
+        self.wait_heading(150, accuracy=5, timeout=180)
+
+        self.do_RTL()
+
     def CPUFailsafe(self):
         '''In lockup Plane should copy RC inputs to RC outputs'''
         self.plane_CPUFailsafe()
@@ -821,6 +838,10 @@ class AutoTestQuadPlane(AutoTest):
 
             ("Mission", "Dalby Mission",
              lambda: self.fly_mission("Dalby-OBC2016.txt", "Dalby-OBC2016-fence.txt")),
+
+            ("Weathervane",
+             "Test Weathervane Functionality",
+             self.weathervane_test),
 
             ("QAssist",
              "QuadPlane Assist tests",

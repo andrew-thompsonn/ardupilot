@@ -220,6 +220,9 @@ class Board:
                 '-lgcov',
                 '-coverage',
             ]
+            env.DEFINES.update(
+                HAL_COVERAGE_BUILD = 1,
+            )
 
         if cfg.options.bootloader:
             # don't let bootloaders try and pull scripting in
@@ -413,6 +416,7 @@ class Board:
 
     def build(self, bld):
         bld.ap_version_append_str('GIT_VERSION', bld.git_head_hash(short=True))
+        bld.ap_version_append_int('GIT_VERSION_INT', int("0x" + bld.git_head_hash(short=True), base=16))
         import time
         ltime = time.localtime()
         if bld.env.build_dates:
@@ -823,7 +827,6 @@ class chibios(Board):
             '-mthumb',
             '--specs=nano.specs',
             '--specs=nosys.specs',
-            '-DCHIBIOS_BOARD_NAME="%s"' % self.name,
             '-D__USE_CMSIS',
             '-Werror=deprecated-declarations',
             '-DNDEBUG=1'
@@ -870,7 +873,7 @@ class chibios(Board):
             '-L%s' % env.BUILDROOT,
             '-L%s' % cfg.srcnode.make_node('modules/ChibiOS/os/common/startup/ARMCMx/compilers/GCC/ld/').abspath(),
             '-L%s' % cfg.srcnode.make_node('libraries/AP_HAL_ChibiOS/hwdef/common/').abspath(),
-            '-Wl,--gc-sections,--no-warn-mismatch,--library-path=/ld,--script=ldscript.ld,--defsym=__process_stack_size__=%s,--defsym=__main_stack_size__=%s' % (cfg.env.PROCESS_STACK, cfg.env.MAIN_STACK)
+            '-Wl,-Map,Linker.map,--cref,--gc-sections,--no-warn-mismatch,--library-path=/ld,--script=ldscript.ld,--defsym=__process_stack_size__=%s,--defsym=__main_stack_size__=%s' % (cfg.env.PROCESS_STACK, cfg.env.MAIN_STACK)
         ]
 
         if cfg.env.DEBUG:
@@ -890,6 +893,9 @@ class chibios(Board):
         else:
             cfg.msg("Enabling ChibiOS asserts", "no")
 
+
+        if cfg.env.SAVE_TEMPS:
+            env.CXXFLAGS += [ '-S', '-save-temps=obj' ]
 
         if cfg.options.disable_watchdog:
             cfg.msg("Disabling Watchdog", "yes")
@@ -996,6 +1002,15 @@ class linux(Board):
 
         if cfg.options.apstatedir:
             cfg.define('AP_STATEDIR', cfg.options.apstatedir)
+
+        defaults_file = 'libraries/AP_HAL_Linux/boards/%s/defaults.parm' % self.get_name()
+        if os.path.exists(defaults_file):
+            env.ROMFS_FILES += [('defaults.parm', defaults_file)]
+            env.DEFINES.update(
+                HAL_PARAM_DEFAULTS_PATH='"@ROMFS/defaults.parm"',
+            )
+        if len(env.ROMFS_FILES) > 0:
+            env.CXXFLAGS += ['-DHAL_HAVE_AP_ROMFS_EMBEDDED_H']
 
     def build(self, bld):
         super(linux, self).build(bld)

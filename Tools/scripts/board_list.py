@@ -14,17 +14,39 @@ class Board(object):
     def __init__(self, name):
         self.name = name
         self.is_ap_periph = False
+        self.autobuild_targets = [
+            'AntennaTracker',
+            'Blimp',
+            'Copter',
+            'Heli',
+            'Plane',
+            'Rover',
+        ]
 
 
 class BoardList(object):
 
-    def __init__(self):
+    def set_hwdef_dir(self):
         self.hwdef_dir = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "..", "..", "libraries", "AP_HAL_ChibiOS", "hwdef")
 
-        if not os.path.exists(self.hwdef_dir):
-            raise ValueError("%s does not exist" % self.hwdef_dir)
+        if os.path.exists(self.hwdef_dir):
+            return
+
+        self.hwdef_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "libraries", "AP_HAL_ChibiOS", "hwdef")
+
+        if os.path.exists(self.hwdef_dir):
+            # we're on the autotest server and have been copied in
+            # to the APM root directory
+            return
+
+        raise ValueError("Did not find hwdef_dir")
+
+    def __init__(self):
+        self.set_hwdef_dir()
 
         # no hwdefs for Linux boards - yet?
         self.boards = [
@@ -60,6 +82,15 @@ class BoardList(object):
             for line in text:
                 if re.match(r"^\s*env AP_PERIPH 1", line):
                     board.is_ap_periph = 1
+                if re.match(r"^\s*env AP_PERIPH_HEAVY 1", line):
+                    board.is_ap_periph = 1
+
+                # a hwdef can specify which vehicles this target is valid for:
+                match = re.match(r"AUTOBUILD_TARGETS\s*(.*)", line)
+                if match is not None:
+                    board.autobuild_targets = [
+                        x.rstrip().lstrip().lower() for x in match.group(1).split(",")
+                    ]
 
     def read_hwdef(self, filepath):
         fh = open(filepath)
@@ -73,7 +104,7 @@ class BoardList(object):
                 ret += [line]
         return ret
 
-    def find_autobuild_boards(self):
+    def find_autobuild_boards(self, build_target=None):
         ret = []
         for board in self.boards:
             if board.is_ap_periph:
@@ -85,44 +116,67 @@ class BoardList(object):
         # should probably have a line in the hwdef indicating they
         # shouldn't be auto-built...
         blacklist = [
+            # the following boards are hacked into build_binaries.py
+            # to be built for Copter only:
+            "CubeGreen-solo",
+            "CubeSolo",
             "skyviper-journey",
             "skyviper-v2450",
-            "CubeGreen-solo",
-            "omnibusf4pro-one",
-            "CubeSolo",
-            "MazzyStarDrone",
-            "fmuv3-bdshot",
-            "CubeYellow-bdshot",
-            "crazyflie2",
-            "NucleoH743",
-            "Pixhawk1-1M-bdshot",
-            "Nucleo-G491",
-            "fmuv5-bdshot",
-            "KakuteF7-bdshot",
+
+            # IOMCU:
             "iomcu",
-            "luminousbee4",
-            "skyviper-f412-rev1",
-            "CubeOrange-joey",
-            "OMNIBUSF7V2-bdshot",
+            'iomcu_f103_8MHz',
+
+            # evaluation boards
             'H757I_EVAL',
             'H757I_EVAL_intf',
-            'iomcu_f103_8MHz',
+            "Nucleo-G491",
+            "NucleoH743",
+
+            # bdshot
+            "CubeYellow-bdshot",
+            "fmuv3-bdshot",
+            "KakuteF7-bdshot",
+            "OMNIBUSF7V2-bdshot",
+            "Pixhawk1-1M-bdshot",
+
+            # other
+            "crazyflie2",
+            "CubeOrange-joey",
+            "luminousbee4",
+            "MazzyStarDrone",
+            "omnibusf4pro-one",
+            "skyviper-f412-rev1",
         ]
 
         ret = filter(lambda x : x not in blacklist, ret)
 
-        return list(ret)
+        # if the caller has supplied a vehicle to limit to then we do that here:
+        if build_target is not None:
+            # Slow down: n^2 algorithm ahead
+            newret = []
+            for x in ret:
+                for b in self.boards:
+                    if b.name.lower() != x.lower():
+                        continue
+                    if build_target.lower() not in [y.lower() for y in b.autobuild_targets]:
+                        continue
+                    newret.append(x)
+            ret = newret
+
+        return sorted(list(ret))
 
     def find_ap_periph_boards(self):
         blacklist = [
-            "Pixracer-periph",
-            "f103-Trigger",
-            "H757I_EVAL",
-            "HerePro",
-            "HereID",
-            "G4-ESC",
             "CubeOrange-periph-heavy",
             "f103-HWESC",
+            "f103-Trigger",
+            "G4-ESC",
+            "HereID",
+            "HerePro",
+
+            # evaluation boards
+            "H757I_EVAL",
             "Nucleo-L476",
             "Nucleo-L496",
         ]
@@ -133,7 +187,7 @@ class BoardList(object):
             if x.name in blacklist:
                 continue
             ret.append(x.name)
-        return list(ret)
+        return sorted(list(ret))
 
 
 AUTOBUILD_BOARDS = BoardList().find_autobuild_boards()

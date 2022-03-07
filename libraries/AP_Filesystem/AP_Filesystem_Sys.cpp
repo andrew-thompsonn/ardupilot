@@ -36,6 +36,7 @@ static const SysFileList sysfs_file_list[] = {
     {"dma.txt"},
     {"memory.txt"},
     {"uarts.txt"},
+    {"timers.txt"},
 #if HAL_MAX_CAN_PROTOCOL_DRIVERS
     {"can_log.txt"},
 #endif
@@ -105,8 +106,13 @@ int AP_Filesystem_Sys::open(const char *fname, int flags)
     if (strcmp(fname, "memory.txt") == 0) {
         hal.util->mem_info(*r.str);
     }
+#if HAL_UART_STATS_ENABLED
     if (strcmp(fname, "uarts.txt") == 0) {
         hal.util->uart_info(*r.str);
+    }
+#endif
+    if (strcmp(fname, "timers.txt") == 0) {
+        hal.util->timer_info(*r.str);
     }
 #if HAL_CANMANAGER_ENABLED
     if (strcmp(fname, "can_log.txt") == 0) {

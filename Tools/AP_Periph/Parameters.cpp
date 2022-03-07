@@ -1,3 +1,5 @@
+
+#include <AP_HAL/AP_HAL_Boards.h>
 #include "AP_Periph.h"
 
 extern const AP_HAL::HAL &hal;
@@ -10,8 +12,8 @@ extern const AP_HAL::HAL &hal;
 #define HAL_PERIPH_RANGEFINDER_BAUDRATE_DEFAULT 115200
 #endif
 
-#ifndef HAL_PERIPH_RANGEFINDER_PORT_DEFAULT
-#define HAL_PERIPH_RANGEFINDER_PORT_DEFAULT 3
+#ifndef AP_PERIPH_RANGEFINDER_PORT_DEFAULT
+#define AP_PERIPH_RANGEFINDER_PORT_DEFAULT 3
 #endif
 
 #ifndef HAL_PERIPH_GPS_PORT_DEFAULT
@@ -31,6 +33,10 @@ extern const AP_HAL::HAL &hal;
 
 #ifndef AP_PERIPH_ESC_TELEM_PORT_DEFAULT
 #define AP_PERIPH_ESC_TELEM_PORT_DEFAULT -1
+#endif
+
+#ifndef AP_PERIPH_BARO_ENABLE_DEFAULT
+#define AP_PERIPH_BARO_ENABLE_DEFAULT 1
 #endif
 
 #ifndef HAL_DEFAULT_MAV_SYSTEM_ID
@@ -201,7 +207,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @Description: Barometer Enable
     // @Values: 0:Disabled, 1:Enabled
     // @User: Standard
-    GSCALAR(baro_enable, "BARO_ENABLE", 1),
+    GSCALAR(baro_enable, "BARO_ENABLE", AP_PERIPH_BARO_ENABLE_DEFAULT),
 #endif
 
 #ifdef AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
@@ -239,7 +245,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     // @RebootRequired: True
-    GSCALAR(rangefinder_port, "RNGFND_PORT", HAL_PERIPH_RANGEFINDER_PORT_DEFAULT),
+    GSCALAR(rangefinder_port, "RNGFND_PORT", AP_PERIPH_RANGEFINDER_PORT_DEFAULT),
 
     // Rangefinder driver
     // @Group: RNGFND

@@ -202,7 +202,7 @@ float Tiltrotor::get_fully_forward_tilt() const
 // return the target tilt value for forward flight
 float Tiltrotor::get_forward_flight_tilt() const
 {
-    return 1.0 - ((flap_angle_deg / 90.0) * SRV_Channels::get_output_scaled(SRV_Channel::k_flap_auto) * 0.01);
+    return 1.0 - ((flap_angle_deg / 90.0) * SRV_Channels::get_slew_limited_output_scaled(SRV_Channel::k_flap_auto) * 0.01);
 }
 
 /*
@@ -530,8 +530,7 @@ void Tiltrotor::vectoring(void)
         return;
     }
 
-    float tilt_threshold = (max_angle_deg/90.0f);
-    bool no_yaw = (current_tilt > tilt_threshold);
+    const bool no_yaw = tilt_over_max_angle();
     if (no_yaw) {
         // fixed wing  We need to apply inverse scaling with throttle, and remove the surface speed scaling as
         // we don't want tilt impacted by airspeed
@@ -672,6 +671,13 @@ bool Tiltrotor_Transition::show_vtol_view() const
     }
 
     return show_vtol;
+}
+
+// return true if we are tilted over the max angle threshold
+bool Tiltrotor::tilt_over_max_angle(void) const
+{
+    const float tilt_threshold = (max_angle_deg/90.0f);
+    return (current_tilt > MIN(tilt_threshold, get_forward_flight_tilt()));
 }
 
 #endif  // HAL_QUADPLANE_ENABLED

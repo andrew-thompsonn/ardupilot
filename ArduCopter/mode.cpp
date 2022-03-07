@@ -431,6 +431,39 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, floa
     // roll_out and pitch_out are returned
 }
 
+// transform pilot's roll or pitch input into a desired velocity
+Vector2f Mode::get_pilot_desired_velocity(float vel_max) const
+{
+    Vector2f vel;
+
+    // throttle failsafe check
+    if (copter.failsafe.radio || !copter.ap.rc_receiver_present) {
+        return vel;
+    }
+    // fetch roll and pitch inputs
+    float roll_out = channel_roll->get_control_in();
+    float pitch_out = channel_pitch->get_control_in();
+
+    // convert roll and pitch inputs to -1 to +1 range
+    float scaler = 1.0 / (float)ROLL_PITCH_YAW_INPUT_MAX;
+    roll_out *= scaler;
+    pitch_out *= scaler;
+
+    // convert roll and pitch inputs into velocity in NE frame
+    vel = Vector2f(-pitch_out, roll_out);
+    if (vel.is_zero()) {
+        return vel;
+    }
+    copter.rotate_body_frame_to_NE(vel.x, vel.y);
+
+    // Transform square input range to circular output
+    // vel_scaler is the vector to the edge of the +- 1.0 square in the direction of the current input
+    Vector2f vel_scaler = vel / MAX(fabsf(vel.x), fabsf(vel.y));
+    // We scale the output by the ratio of the distance to the square to the unit circle and multiply by vel_max
+    vel *= vel_max / vel_scaler.length();
+    return vel;
+}
+
 bool Mode::_TakeOff::triggered(const float target_climb_rate) const
 {
     if (!copter.ap.land_complete) {
@@ -492,16 +525,15 @@ void Mode::make_safe_ground_handling(bool force_throttle_unlimited)
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
     }
 
-
+    // aircraft is landed, integrator terms must be reset regardless of spool state
+    attitude_control->reset_rate_controller_I_terms_smoothly();
+ 
     switch (motors->get_spool_state()) {
-
     case AP_Motors::SpoolState::SHUT_DOWN:
     case AP_Motors::SpoolState::GROUND_IDLE:
-        // relax controllers during idle states
-        attitude_control->reset_rate_controller_I_terms_smoothly();
+        // reset yaw targets and rates during idle states
         attitude_control->reset_yaw_target_and_rate();
         break;
-
     case AP_Motors::SpoolState::SPOOLING_UP:
     case AP_Motors::SpoolState::THROTTLE_UNLIMITED:
     case AP_Motors::SpoolState::SPOOLING_DOWN:
@@ -599,13 +631,12 @@ void Mode::land_run_vertical_control(bool pause_descent)
 
 void Mode::land_run_horizontal_control()
 {
-    float target_roll = 0.0f;
-    float target_pitch = 0.0f;
+    Vector2f vel_correction;
     float target_yaw_rate = 0;
 
     // relax loiter target if we might be landed
     if (copter.ap.land_complete_maybe) {
-        loiter_nav->soften_for_landing();
+        pos_control->soften_for_landing_xy();
     }
 
     // process pilot inputs
@@ -622,11 +653,14 @@ void Mode::land_run_horizontal_control()
             // apply SIMPLE mode transform to pilot inputs
             update_simple_mode();
 
-            // convert pilot input to lean angles
-            get_pilot_desired_lean_angles(target_roll, target_pitch, loiter_nav->get_angle_max_cd(), attitude_control->get_althold_lean_angle_max_cd());
+            // convert pilot input to reposition velocity
+            // use half maximum acceleration as the maximum velocity to ensure aircraft will
+            // stop from full reposition speed in less than 1 second.
+            const float max_pilot_vel = wp_nav->get_wp_acceleration() * 0.5;
+            vel_correction = get_pilot_desired_velocity(max_pilot_vel);
 
             // record if pilot has overridden roll or pitch
-            if (!is_zero(target_roll) || !is_zero(target_pitch)) {
+            if (!vel_correction.is_zero()) {
                 if (!copter.ap.land_repo_active) {
                     AP::logger().Write_Event(LogEvent::LAND_REPO_ACTIVE);
                 }
@@ -641,29 +675,34 @@ void Mode::land_run_horizontal_control()
         }
     }
 
+    // this variable will be updated if prec land target is in sight and pilot isn't trying to reposition the vehicle
+    copter.ap.prec_land_active = false;
 #if PRECISION_LANDING == ENABLED
-    bool doing_precision_landing = !copter.ap.land_repo_active && copter.precland.target_acquired();
+    copter.ap.prec_land_active = !copter.ap.land_repo_active && copter.precland.target_acquired();
     // run precision landing
-    if (doing_precision_landing) {
-        Vector2f target_pos, target_vel_rel;
+    if (copter.ap.prec_land_active) {
+        Vector2f target_pos, target_vel;
         if (!copter.precland.get_target_position_cm(target_pos)) {
             target_pos = inertial_nav.get_position_xy_cm();
         }
-        if (!copter.precland.get_target_velocity_relative_cms(target_vel_rel)) {
-            target_vel_rel = -inertial_nav.get_velocity_xy_cms();
-        }
-        pos_control->set_pos_target_xy_cm(target_pos.x, target_pos.y);
-        pos_control->override_vehicle_velocity_xy(-target_vel_rel);
+         // get the velocity of the target
+        copter.precland.get_target_velocity_cms(inertial_nav.get_velocity_xy_cms(), target_vel);
+
+        Vector2f zero;
+        Vector2p landing_pos = target_pos.topostype();
+        // target vel will remain zero if landing target is stationary
+        pos_control->input_pos_vel_accel_xy(landing_pos, target_vel, zero);
     }
 #endif
 
-    // process roll, pitch inputs
-    loiter_nav->set_pilot_desired_acceleration(target_roll, target_pitch);
+    if (!copter.ap.prec_land_active) {
+        Vector2f accel;
+        pos_control->input_vel_accel_xy(vel_correction, accel);
+    }
 
-    // run loiter controller
-    loiter_nav->update();
-
-    Vector3f thrust_vector = loiter_nav->get_thrust_vector();
+    // run pos controller
+    pos_control->update_xy_controller();
+    Vector3f thrust_vector = pos_control->get_thrust_vector();
 
     if (g2.wp_navalt_min > 0) {
         // user has requested an altitude below which navigation

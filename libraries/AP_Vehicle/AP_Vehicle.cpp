@@ -67,6 +67,16 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(efi, "EFI", 9, AP_Vehicle, AP_EFI),
 #endif
 
+#if AP_AIRSPEED_ENABLED
+    // @Group: ARSPD
+    // @Path: ../AP_Airspeed/AP_Airspeed.cpp
+    AP_SUBGROUPINFO(airspeed, "ARSPD", 10, AP_Vehicle, AP_Airspeed),
+#endif
+
+    // @Group: CUST_ROT
+    // @Path: ../AP_CustomRotations/AP_CustomRotations.cpp
+    AP_SUBGROUPINFO(custom_rotations, "CUST_ROT", 11, AP_Vehicle, AP_CustomRotations),
+
     AP_GROUPEND
 };
 
@@ -146,6 +156,18 @@ void AP_Vehicle::setup()
     // init_ardupilot is where the vehicle does most of its initialisation.
     init_ardupilot();
 
+#if AP_AIRSPEED_ENABLED
+    airspeed.init();
+    if (airspeed.enabled()) {
+        airspeed.calibrate(true);
+    } 
+#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+    else {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING,"No airspeed sensor present or enabled");
+    }
+#endif
+#endif  // AP_AIRSPEED_ENABLED
+
 #if !APM_BUILD_TYPE(APM_BUILD_Replay)
     SRV_Channels::init();
 #endif
@@ -185,6 +207,8 @@ void AP_Vehicle::setup()
 #if HAL_EFI_ENABLED
     efi.init();
 #endif
+
+    custom_rotations.init();
 
     gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
 }
@@ -256,6 +280,9 @@ SCHED_TASK_CLASS arguments:
 
  */
 const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
+#if AP_AIRSPEED_ENABLED
+    SCHED_TASK_CLASS(AP_Airspeed,  &vehicle.airspeed,       update,                   10, 100, 41),    // NOTE: the priority number here should be right before Plane's calc_airspeed_errors
+#endif
 #if HAL_RUNCAM_ENABLED
     SCHED_TASK_CLASS(AP_RunCam,    &vehicle.runcam,         update,                   50, 50, 200),
 #endif
@@ -485,7 +512,6 @@ void AP_Vehicle::accel_cal_update()
 #endif
 #endif // HAL_INS_ENABLED
 }
-
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;
 

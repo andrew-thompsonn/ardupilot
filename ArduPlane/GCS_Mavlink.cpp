@@ -214,6 +214,11 @@ void GCS_MAVLINK_Plane::send_position_target_global_int()
     static constexpr uint16_t TYPE_MASK = POSITION_TARGET_TYPEMASK_VX_IGNORE | POSITION_TARGET_TYPEMASK_VY_IGNORE | POSITION_TARGET_TYPEMASK_VZ_IGNORE |
                                           POSITION_TARGET_TYPEMASK_AX_IGNORE | POSITION_TARGET_TYPEMASK_AY_IGNORE | POSITION_TARGET_TYPEMASK_AZ_IGNORE |
                                           POSITION_TARGET_TYPEMASK_YAW_IGNORE | POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE | POSITION_TARGET_TYPEMASK_LAST_BYTE;
+    int32_t alt = 0;
+    if (!next_WP_loc.is_zero()) {
+        UNUSED_RESULT(next_WP_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, alt));
+    }
+
     mavlink_msg_position_target_global_int_send(
         chan,
         AP_HAL::millis(), // time_boot_ms
@@ -221,7 +226,7 @@ void GCS_MAVLINK_Plane::send_position_target_global_int()
         TYPE_MASK, // ignore everything except the x/y/z components
         next_WP_loc.lat, // latitude as 1e7
         next_WP_loc.lng, // longitude as 1e7
-        next_WP_loc.alt * 0.01f, // altitude is sent as a float
+        alt * 0.01, // altitude is sent as a float
         0.0f, // vx
         0.0f, // vy
         0.0f, // vz
@@ -265,7 +270,7 @@ float GCS_MAVLINK_Plane::vfr_hud_climbrate() const
         return plane.g2.soaring_controller.get_vario_reading();
     }
 #endif
-    return AP::baro().get_climb_rate();
+    return GCS_MAVLINK::vfr_hud_climbrate();
 }
 
 void GCS_MAVLINK_Plane::send_wind() const
@@ -423,6 +428,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("RAW_SENS", 0, GCS_MAVLINK_Parameters, streamRates[0],  1),
 
@@ -432,6 +438,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXT_STAT", 1, GCS_MAVLINK_Parameters, streamRates[1],  1),
 
@@ -441,6 +448,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("RC_CHAN",  2, GCS_MAVLINK_Parameters, streamRates[2],  1),
 
@@ -450,6 +458,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("RAW_CTRL", 3, GCS_MAVLINK_Parameters, streamRates[3],  1),
 
@@ -459,6 +468,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("POSITION", 4, GCS_MAVLINK_Parameters, streamRates[4],  1),
 
@@ -468,6 +478,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXTRA1",   5, GCS_MAVLINK_Parameters, streamRates[5],  1),
 
@@ -477,6 +488,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXTRA2",   6, GCS_MAVLINK_Parameters, streamRates[6],  1),
 
@@ -486,6 +498,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXTRA3",   7, GCS_MAVLINK_Parameters, streamRates[7],  1),
 
@@ -495,6 +508,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("PARAMS",   8, GCS_MAVLINK_Parameters, streamRates[8],  10),
 
@@ -504,6 +518,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK_Parameters, streamRates[9],  5),
     AP_GROUPEND
@@ -670,18 +685,10 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_do_reposition(const mavlink_com
         return MAV_RESULT_DENIED;
     }
 
-    Location requested_position {};
-    requested_position.lat = packet.x;
-    requested_position.lng = packet.y;
-
-    if (fabsf(packet.z) > LOCATION_ALT_MAX_M) {
+    Location requested_position;
+    if (!location_from_command_t(packet, requested_position)) {
         return MAV_RESULT_DENIED;
     }
-    Location::AltFrame frame;
-    if (!mavlink_coordinate_frame_to_location_alt_frame((MAV_FRAME)packet.frame, frame)) {
-        return MAV_RESULT_DENIED; // failed as the location is not valid
-    }
-    requested_position.set_alt_cm((int32_t)(packet.z * 100.0f), frame);
 
     if (is_zero(packet.param4)) {
         requested_position.loiter_ccw = 0;
@@ -997,10 +1004,10 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
             if (!is_zero(packet.param1)) {
                 return MAV_RESULT_FAILED;
             }
-            Location new_home_loc {};
-            new_home_loc.lat = (int32_t)(packet.param5 * 1.0e7f);
-            new_home_loc.lng = (int32_t)(packet.param6 * 1.0e7f);
-            new_home_loc.alt = (int32_t)(packet.param7 * 100.0f);
+            Location new_home_loc;
+            if (!location_from_command_t(packet, MAV_FRAME_GLOBAL, new_home_loc)) {
+                return MAV_RESULT_DENIED;
+            }
             if (!set_home(new_home_loc, true)) {
                 return MAV_RESULT_FAILED;
             }
@@ -1199,6 +1206,8 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
 
     case MAVLINK_MSG_ID_SET_HOME_POSITION:
     {
+        send_received_message_deprecation_warning(STR_VALUE(MAVLINK_MSG_ID_SET_HOME_POSITION));
+
         mavlink_set_home_position_t packet;
         mavlink_msg_set_home_position_decode(&msg, &packet);
         Location new_home_loc {};
@@ -1340,7 +1349,7 @@ int16_t GCS_MAVLINK_Plane::high_latency_target_altitude() const
 {
     AP_AHRS &ahrs = AP::ahrs();
     struct Location global_position_current;
-    UNUSED_RESULT(ahrs.get_position(global_position_current));
+    UNUSED_RESULT(ahrs.get_location(global_position_current));
 
 #if HAL_QUADPLANE_ENABLED
     const QuadPlane &quadplane = plane.quadplane;
@@ -1403,18 +1412,6 @@ uint8_t GCS_MAVLINK_Plane::high_latency_wind_direction() const
     // return units are deg/2
     // need to convert -180->180 to 0->360/2
     return wrap_360(degrees(atan2f(-wind.y, -wind.x))) / 2;
-}
-
-int8_t GCS_MAVLINK_Plane::high_latency_air_temperature() const
-{
-    // return units are degC
-    AP_Airspeed *airspeed = AP_Airspeed::get_singleton();
-    float air_temperature;
-    if (airspeed != nullptr && airspeed->enabled() && airspeed->get_temperature(air_temperature)) {
-        return air_temperature;
-    }
-
-    return INT8_MIN;
 }
 #endif // HAL_HIGH_LATENCY2_ENABLED
 

@@ -184,7 +184,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 
     SCHED_TASK_CLASS(AP_Scheduler,         &copter.scheduler,           update_logging, 0.1,  75, 126),
 #if RPM_ENABLED == ENABLED
-    SCHED_TASK(rpm_update,            40,    200, 129),
+    SCHED_TASK_CLASS(AP_RPM,               &copter.rpm_sensor,          update,          40, 200, 129),
 #endif
     SCHED_TASK_CLASS(Compass, &copter.compass, cal_update, 100, 100, 132),
     SCHED_TASK_CLASS(AP_TempCalibration,   &copter.g2.temp_calibration, update,          10, 100, 135),
@@ -401,7 +401,7 @@ bool Copter::set_target_angle_and_climbrate(float roll_deg, float pitch_deg, flo
     Quaternion q;
     q.from_euler(radians(roll_deg),radians(pitch_deg),radians(yaw_deg));
 
-    mode_guided.set_angle(q, climb_rate_ms*100, use_yaw_rate, radians(yaw_rate_degs), false);
+    mode_guided.set_angle(q, Vector3f{}, climb_rate_ms*100, false);
     return true;
 }
 
@@ -416,6 +416,32 @@ bool Copter::set_circle_rate(float rate_dps)
 {
     circle_nav->set_rate(rate_dps);
     return true;
+}
+
+// returns true if mode supports NAV_SCRIPT_TIME mission commands
+bool Copter::nav_scripting_enable(uint8_t mode)
+{
+    return mode == (uint8_t)mode_auto.mode_number();
+}
+
+// lua scripts use this to retrieve the contents of the active command
+bool Copter::nav_script_time(uint16_t &id, uint8_t &cmd, float &arg1, float &arg2)
+{
+    if (flightmode != &mode_auto) {
+        return false;
+    }
+
+    return mode_auto.nav_script_time(id, cmd, arg1, arg2);
+}
+
+// lua scripts use this to indicate when they have complete the command
+void Copter::nav_script_time_done(uint16_t id)
+{
+    if (flightmode != &mode_auto) {
+        return;
+    }
+
+    return mode_auto.nav_script_time_done(id);
 }
 
 #endif // AP_SCRIPTING_ENABLED
@@ -491,7 +517,7 @@ void Copter::ten_hz_logging_loop()
         Log_Write_EKF_POS();
     }
     if (should_log(MASK_LOG_MOTBATT)) {
-        Log_Write_MotBatt();
+        motors->Log_Write();
     }
     if (should_log(MASK_LOG_RCIN)) {
         logger.Write_RCIN();

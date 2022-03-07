@@ -25,6 +25,7 @@
 #include <AP_BoardConfig/AP_BoardConfig.h>     // board configuration library
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Button/AP_Button.h>
+#include <AP_Compass/AP_Compass.h>
 #include <AP_EFI/AP_EFI.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Generator/AP_Generator.h>
@@ -50,6 +51,7 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
 #endif
+#include <AP_CustomRotations/AP_CustomRotations.h>
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
@@ -203,7 +205,8 @@ public:
 
     // command throttle percentage and roll, pitch, yaw target
     // rates. For use with scripting controllers
-    virtual bool set_target_throttle_rate_rpy(float throttle_pct, float roll_rate_dps, float pitch_rate_dps, float yaw_rate_dps) { return false; }
+    virtual void set_target_throttle_rate_rpy(float throttle_pct, float roll_rate_dps, float pitch_rate_dps, float yaw_rate_dps) {}
+    virtual bool nav_scripting_enable(uint8_t mode) {return false;}
 
     // get target location (for use by scripting)
     virtual bool get_target_location(Location& target_loc) { return false; }
@@ -214,6 +217,9 @@ public:
 
     // set steering and throttle (-1 to +1) (for use by scripting with Rover)
     virtual bool set_steering_and_throttle(float steering, float throttle) { return false; }
+
+    // set turn rate in deg/sec and speed in meters/sec (for use by scripting with Rover)
+    virtual bool set_desired_turn_rate_and_speed(float turn_rate, float speed) { return false; }
 
     // support for NAV_SCRIPT_TIME mission command
     virtual bool nav_script_time(uint16_t &id, uint8_t &cmd, float &arg1, float &arg2) { return false; }
@@ -367,6 +373,10 @@ protected:
     AP_EFI efi;
 #endif
 
+#if AP_AIRSPEED_ENABLED
+    AP_Airspeed airspeed;
+#endif
+
     static const struct AP_Param::GroupInfo var_info[];
     static const struct AP_Scheduler::Task scheduler_tasks[];
 
@@ -404,6 +414,8 @@ private:
     bool done_safety_init;
 
     uint32_t _last_internal_errors;  // backup of AP_InternalError::internal_errors bitmask
+
+    AP_CustomRotations custom_rotations;
 };
 
 namespace AP {

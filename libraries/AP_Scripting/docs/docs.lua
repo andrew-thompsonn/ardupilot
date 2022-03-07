@@ -301,6 +301,15 @@ function Parameter() end
 -- desc
 ---@param value number
 ---@return boolean
+function Parameter_ud:set_default(value) end
+
+-- desc
+---@return boolean
+function Parameter_ud:configured() end
+
+-- desc
+---@param value number
+---@return boolean
 function Parameter_ud:set_and_save(value) end
 
 -- desc
@@ -311,6 +320,17 @@ function Parameter_ud:set(value) end
 -- desc
 ---@return number|nil
 function Parameter_ud:get() end
+
+-- desc
+---@param key integer
+---@param group_element uint32_t_ud
+---@param type integer
+---| '1' # AP_PARAM_INT8
+---| '2' # AP_PARAM_INT16
+---| '3' # AP_PARAM_INT32
+---| '4' # AP_PARAM_FLOAT
+---@return boolean
+function Parameter_ud:init_by_info(key, group_element, type) end
 
 -- desc
 ---@param name string
@@ -324,6 +344,10 @@ local Vector2f_ud = {}
 
 ---@return Vector2f_ud
 function Vector2f() end
+
+-- copy
+---@return Vector2f_ud
+function Vector2f_ud:copy() end
 
 -- get field
 ---@return number
@@ -371,6 +395,10 @@ local Vector3f_ud = {}
 
 ---@return Vector3f_ud
 function Vector3f() end
+
+-- copy
+---@return Vector3f_ud
+function Vector3f_ud:copy() end
 
 -- get field
 ---@return number
@@ -437,6 +465,10 @@ local Location_ud = {}
 
 ---@return Location_ud
 function Location() end
+
+-- copy
+---@return Location_ud
+function Location_ud:copy() end
 
 -- get field
 ---@return boolean
@@ -963,6 +995,26 @@ function param:set(name, value) end
 ---@return number|nil
 function param:get(name) end
 
+-- desc
+---@param name string
+---@param value number
+---@return boolean
+function param:set_default(name, value) end
+
+-- desc
+---@param table_key integer
+---@param prefix string
+---@param num_params integer
+---@return boolean
+function param:add_table(table_key, prefix, num_params) end
+
+-- desc
+---@param table_key integer
+---@param param_num integer
+---@param name string
+---@param default_value number
+---@return boolean
+function param:add_param(table_key, param_num, name, default_value) end
 
 -- desc
 ---@class esc_telem
@@ -1839,7 +1891,7 @@ function ahrs:get_home() end
 
 -- desc
 ---@return Location_ud|nil
-function ahrs:get_position() end
+function ahrs:get_location() end
 
 -- desc
 ---@return number

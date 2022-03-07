@@ -17,11 +17,7 @@
 #include "hwing_esc.h"
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Scripting/AP_Scripting.h>
-#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-#include <AP_HAL_ChibiOS/CANIface.h>
-#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
-#include <AP_HAL_SITL/CANSocketIface.h>
-#endif
+#include <AP_HAL/CANIface.h>
 
 #if HAL_GCS_ENABLED
 #include "GCS_MAVLink.h"
@@ -247,6 +243,7 @@ public:
     uint32_t last_gps_update_ms;
     uint32_t last_baro_update_ms;
     uint32_t last_airspeed_update_ms;
+    bool saw_gps_lock_once;
 
     static AP_Periph_FW *_singleton;
 
