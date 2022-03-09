@@ -19,6 +19,7 @@
 
 #define PI (3.14159265)
 #define WIND_BUFFER_SIZE (20)
+#define DegreeAdjustment (111139)
 
 
 typedef struct {
@@ -38,77 +39,82 @@ typedef struct {
 
 
 class RalphieTrajectory {
-
+    public:
     /**
-     * @brief The current estimation of wind vector
+     *  The current estimation of wind vector
+     * 
      * 
      */
     Vector3f currentWindEstimate;
 
     /**
-     * @brief The current estimation of wind direction 
+     *  The current estimation of wind direction 
      * 
      */
     float currentWindAngleEstimate;
 
     /**
-     * @brief Index to keep track of wind averaging operations
+     * Index to keep track of wind averaging operations
      * 
      */
     uint16_t windBufferIndex=0;
 
     /**
-     * @brief Array of aircraft states representing the trajectory
+     * Array of aircraft states representing the trajectory
      * 
      */
     aircraftState_t waypoints[WARIO_TRAJECTORY_SIZE];
 
     /**
-     * @brief Array of aircraft states representing the trajectory
+     * Array of aircraft states representing the trajectory
      * 
      */
     aircraftState_t waypointsSquircle[WARIO_TRAJECTORY_SIZE];
 
      /**
-     * @brief Array of aircraft states representing the trajectory of the transition
+     * Array of aircraft states representing the trajectory of the transition
      * 
      */
     aircraftState_t waypointsTransition[WARIO_TRAJECTORY_SIZE];
 
     /**
-     * @brief Array of aircraft states representing the trajectory of the transition
+     * Array of aircraft states representing the trajectory of the transition
      * 
      */
     aircraftState_t waypointsRotated[WARIO_TRAJECTORY_SIZE];
 
 
-     * @brief Array of wind vectors
-     * 
-     */
+     // array of wind buffer values
     Vector3f windBuffer[WIND_BUFFER_SIZE];
 
     /**
-     * @brief Number of measurements in the wind buffer 
+     *  Number of measurements in the wind buffer 
      * 
      */
     uint16_t windSamples;
 
     /**
-     * @brief Average the current contents of the wind buffer
+     *  Average the current contents of the wind buffer
      * 
      */
     void averageWind();
 
-public:
+    /**
+     * @brief array of location waypoints for integration with auto controller. 
+     * 
+     */
+    Location currentTrajectory[WARIO_TRAJECTORY_SIZE];
+
+
 
     /**
-     * @brief Generate the default circular trajectory 
+     *  Generate the default circular trajectory 
      * 
      */
     void initCircle(warioInput_t parameters);
 
         /**
-     * @brief Generate the default circular trajectory 
+     * Generate the default circular trajectory 
      * 
      */
     void initSquircle(warioInput_t parameters);
@@ -125,6 +131,7 @@ public:
      */
     void updateTransition(warioInput_t parameters, Vector3f windEstimate, Vector3f pastWindEstimate);
 
+  
     /**
      * @brief Update the rolling average for the wind estimate
      * 
@@ -138,6 +145,12 @@ public:
      */
     void resetWindAverage();
 
+     /**
+     * @brief function used to convert calculated trajectories into arrays of data in Location class form for wp allocation. 
+     * 
+     */
+    void convertWaypointsToLocations(Location home, flightPhase_t currentPhase);
+
 
     // Define init circle variables and arrays. 
 
@@ -147,7 +160,7 @@ public:
 
     //write vectors of positions over path
     float xPos[WARIO_TRAJECTORY_SIZE];
-    float  yPos[WARIO_TRAJECTORY_SIZE];
+    float yPos[WARIO_TRAJECTORY_SIZE];
     float cRoll;
 
     // Define init Squircle variables and arrays. 
@@ -195,8 +208,7 @@ public:
     float yDeltaSecondStraight;
     float cRollS;
 
-    //Define squircle rotation parameters
-    float rotationAngle;
+  
 
     //Define transition path parameters
     float startAngle;
