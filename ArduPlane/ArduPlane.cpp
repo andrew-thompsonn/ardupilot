@@ -145,6 +145,10 @@ void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
     tasks = &scheduler_tasks[0];
     task_count = ARRAY_SIZE(scheduler_tasks);
     log_bit = MASK_LOG_PM;
+
+    // create files
+    FILE *controls_file = fopen("CONTROLS_LOG", "w");
+    fclose(controls_file);
 }
 
 #if HAL_QUADPLANE_ENABLED
@@ -152,14 +156,6 @@ constexpr int8_t Plane::_failsafe_priorities[7];
 #else
 constexpr int8_t Plane::_failsafe_priorities[6];
 #endif
-
-// void Plane::update_state() {
-
-// 	printf("Position: %.3f, %.3f, %.3f\n", currentState.position.x, currentState.position.y, currentState.position.z);
-// 	printf("Velocity: %.3f, %.3f, %.3f\n", currentState.velocity.x, currentState.velocity.y, currentState.velocity.z);
-// 	printf("Angles:   %.3f, %.3f, %.3f\n", currentState.roll*180/3.14, currentState.pitch*180/3.14, currentState.yaw*180/3.14);
-// 	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x, currentState.angularVelocity.y, currentState.angularVelocity.z);
-// }
 
  void Plane::update_trajectory() {
 
@@ -183,11 +179,6 @@ constexpr int8_t Plane::_failsafe_priorities[6];
     // printf("\nran update()\n");
 
  }
-
-// void Plane::lqt_controller() {
-
-//     printf("\nIn lqt task\n");
-// }
 
 
 // update AHRS system
@@ -278,6 +269,19 @@ void Plane::update_logging1(void)
 
     if (should_log(MASK_LOG_ATTITUDE_MED))
         ahrs.Write_AOA_SSA();
+
+    float amps, mah;
+    bool ampsReceived = battery.current_amps(amps);
+    bool mahReceived = battery.consumed_mah(mah);
+    float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
+    float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
+    float rudder  = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
+    float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
+    if (ampsReceived && mahReceived) {
+        FILE *controls_file = fopen("CONTROLS_LOG", "a");
+        fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", throttle, aileron, elevator, rudder, amps, mah);
+        fclose(controls_file);
+    }
 }
 
 /*
