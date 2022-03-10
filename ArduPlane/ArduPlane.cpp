@@ -159,24 +159,49 @@ constexpr int8_t Plane::_failsafe_priorities[6];
 
  void Plane::update_trajectory() {
 
-    //  printf("\nIn trajectory task\n");
+    // update the initial GPS location for calculations of all trajectories. 
+    //this is done from the set "home" Loc that is set when vehicle is armed. 
+    //test if home is working
+    printf("Home Lat: %.6d, Home Long: %.4d, Home Alt: %.6d\n", home.lat,home.lng,home.alt);
+    //test cartesian to degree conversion within Location class. 
+    //int32_t testAlt = home.alt + 100;
+    //int32_t testLat = ((home.lat*LATLON_TO_M) + 100)*LATLON_TO_M_INV;
+    //printf("Adj alt: %.6d, Adj lat: %.6d\n", testAlt, testLat);
+    //test parameters for init
+    warioInput_t testParameters;
 
- 
-    // //test parameters for init
-    // warioInput_t testParameters;
+    testParameters.lat = 0.000; //GPS coordinates
+    testParameters.lon = 0.000; //GPS coordinates
+    testParameters.rad = 1000; //meters divided by 111111 to convert to deg (GPS)
+    testParameters.maxAlt = 100.0;  //meters
+    testParameters.minAlt = 0.0;  
+    testParameters.initialAngle = 0.00;
+    testParameters.targetVelocity = 20.0;
 
-    // testParameters.lat = 0.000; //GPS coordinates
-    // testParameters.lon = 0.000; //GPS coordinates
-    // testParameters.rad = 1000; //meters divided by 111111 to convert to deg (GPS)
-    // testParameters.maxAlt = 683.2;  //meters
-    // testParameters.minAlt = 0.0;  
-    // testParameters.initialAngle = 0.00;
-    // testParameters.targetVelocity = 20.0;
+    Vector3f windEstimate;
+    windEstimate.x = 0;
+    windEstimate.y = 0;
+    windEstimate.z = 0;
 
-    // circleTrajectory.init(testParameters);
-    // printf("\nran init()\n");
-    // circleTrajectory.update(testParameters);
-    // printf("\nran update()\n");
+    Vector3f pastWindEstimate;
+    pastWindEstimate.x = 0;
+    pastWindEstimate.y = 0;
+    pastWindEstimate.z = 0;
+
+    circleTrajectory.initCircle(testParameters);
+    printf("\nran initCircle()\n");
+    circleTrajectory.initSquircle(testParameters);
+    printf("\nran initSquircle()\n");
+    circleTrajectory.updatePath(testParameters, windEstimate);
+    printf("\nran updatePath()\n");
+    circleTrajectory.updateTransition(testParameters, windEstimate, pastWindEstimate); 
+    printf("\nran updateTransition()\n");
+
+    flightPhase_t currentPhase = FLIGHT_PHASE_CIRCLE;
+    circleTrajectory.convertWaypointsToLocations(home, currentPhase);
+    printf("\n ran waypoint conversion \n");
+
+    
 
  }
 

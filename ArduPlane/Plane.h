@@ -20,7 +20,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
+#include <iostream>
+#include <vector>
+using namespace std;
+#include <numeric>
+#include <iomanip>
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
 ////////////////////////////////////////////////////////////////////////////////
@@ -999,7 +1003,7 @@ private:
 	// void update_state();
 	 void update_trajectory();
 	// void lqt_controller();
-
+    
     void disarm_if_autoland_complete();
 # if OSD_ENABLED
     void get_osd_roll_pitch_rad(float &roll, float &pitch) const override;
