@@ -1,11 +1,13 @@
 
 #include "mode.h"
 #include "plane.h"
+//#include <AP_Mission/AP_Mission.h>
 
 //call mode 27 from console to switch to RALPHIE mode//
 void ModeLQT::run() {
 
     /* For control system -> called from Plane::stablize() in Attitude.cpp line 503 */
+    //Can use "past_interval_finish_line" from location library to check if we have passed a certain waypoint
     switch (desiredState.phase) {
      
         case FLIGHT_PHASE_CIRCLE:
@@ -41,6 +43,37 @@ void ModeLQT::crashThePlane() {
 void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
 
     // Function takes in the gain values based on case in switch statement
+    AP_Mission::Mission_Command myCmd;
+    plane.mission.read_cmd_from_storage(0,myCmd);
+    //printf("Position of x y z: %f %f %f\n",plane.next_WP_loc.lat*LATLON_TO_M,plane.next_WP_loc.lng*LATLON_TO_M,plane.next_WP_loc.alt*LATLON_TO_M);
+    //printf("altitude %d\n",myCmd.content.location.alt);
+    //printf("is running? %d\n",plane.mission.get_current_nav_cmd().id);
+
+    uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
+
+    if (nav_cmd_id == MAV_CMD_NAV_TAKEOFF ||
+        (nav_cmd_id == MAV_CMD_NAV_LAND && plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_ABORT_LAND)) {
+        plane.takeoff_calc_roll();
+        plane.takeoff_calc_pitch();
+        plane.calc_throttle();
+    } else if (nav_cmd_id == MAV_CMD_NAV_LAND) {
+        plane.calc_nav_roll();
+        plane.calc_nav_pitch();
+
+        // allow landing to restrict the roll limits
+        plane.nav_roll_cd = plane.landing.constrain_roll(plane.nav_roll_cd, plane.g.level_roll_limit*100UL);
+
+        plane.calc_throttle();
+    } else {
+        // we are doing normal AUTO flight, the special cases
+        // are for takeoff and landing
+        if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
+            plane.steer_state.hold_course_cd = -1;
+        }
+        plane.calc_nav_roll();
+        plane.calc_nav_pitch();
+        plane.calc_throttle();
+    }
 
     float latInput[2];
     float lonInput[2];
@@ -57,6 +90,12 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     //for testing, use next_wp_loc() to update desired state, probably only going to be able to compare x and y location
 
     //Treating desired state as movement only in the y direction so everything is held constant except our y position
+    
+    //****************WAYPOINT NOTES:*******************
+    //hal.util->persistent_data.waypoint_num can be used to access the current waypoint index number, this number is updated inside AP_Mission and is declared in Util.h
+    //_nav_cmd.index looks like it governs whether the misison continues or not
+    //line 2452 in AP_Mission.cpp continously updates the previous waypoint
+    //value of MAV_CMD_NAV_WAYPOINT == 16
     float latStateDesired[6] = {currentState.velocity.y,0,0,0,0,currentState.position.y + 1};
     float lonStateDesired[6] = {0,0,0,currentState.pitch,currentState.position.x,currentState.position.z};
 
@@ -79,27 +118,28 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
 
     // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
     //look into set_output_scaled to see what units should be passed into the channels
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
+    /*SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]/1000);
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]/1000);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]/1000);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]/1000);*/
 
 }
 
 
-bool ModeLQT::_enter() {
-    
-    /* Enters the mode, perform tasks that only need to happen on initialization */
-    // trajectory.init();
-    // printState();
+bool ModeLQT::_enter()
+{
 
-    Location test(currentState.position.y,currentState.position.x,currentState.position.z,Location::AltFrame::ABSOLUTE);
-    loc = test;
+    plane.next_WP_loc = plane.prev_WP_loc = plane.current_loc;
+    // start or resume the mission, based on MIS_AUTORESET
+    plane.mission.start_or_resume();
 
-    /*
-    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
-    controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
-    */
+    if (hal.util->was_watchdog_armed()) {
+        if (hal.util->persistent_data.waypoint_num != 0) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Watchdog: resume WP %u", hal.util->persistent_data.waypoint_num);
+            plane.mission.set_current_cmd(hal.util->persistent_data.waypoint_num);
+            hal.util->persistent_data.waypoint_num = 0;
+        }
+    }
 
     return true;
 }
@@ -108,6 +148,8 @@ bool ModeLQT::_enter() {
 void ModeLQT::update() {
     
     /* Called at 400 Hz from scheduler, other miscellaneous items can happen here */
+
+    plane.mission.update();
 
     currentState.roll = plane.ahrs.get_roll();
     currentState.pitch = plane.ahrs.get_pitch();
@@ -122,13 +164,13 @@ void ModeLQT::update() {
 
     //printf("printing current waypoint data: %d \n",plane.current_loc.alt);
 
-    // printState();
+    //printState();
 }
 
 
-void ModeLQT::navigate() {
+//void ModeLQT::navigate() {
     
-    /* For trajectory and navigation -> called from Plane::navigate in ArduPlane.cpp line 109 */
+    /* For trajectory and navigation -> called from Plane::navigate in ArduPlane.cpp line 109 
     if (navigation == INACTIVE)
         return;
     
@@ -139,8 +181,14 @@ void ModeLQT::navigate() {
 
     /* Update plane.next_WP_loc, plane.current_loc, plane.prev_WP_loc etc */
     //printf("RALPHIE NAVIGATING\n");
-}
+//}
 
+void ModeLQT::navigate()
+{
+    if (AP::ahrs().home_is_set()) {
+        plane.mission.update();
+    }
+}
 
 void ModeLQT::printState() {
 

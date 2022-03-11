@@ -806,20 +806,25 @@ public:
     {-0.1516,0.0241,-0.0699,-0.6664,-0.0341,0.0293}
     };
 
-    Number mode_number() const override { return Number::LQT; }
+    Number mode_number() const override { return Number::RALPHIE; }
+    const char *name() const override { return "RALPHIE"; }
+    const char *name4() const override { return "RALPHIE"; }
 
-    const char *name()  const override { return "LQT"; }
-    const char *name4() const override { return "LQT_";    }
+    // methods that affect movement of the vehicle in this mode
+    bool allows_throttle_nudging() const override { return true; }
 
-    bool does_auto_throttle()   const override { return true; }
-    bool does_auto_navigation() const override { return true; }
+    void update() override;
 
-    void run()      override;
-    void update()   override;
     void navigate() override;
 
-    bool navigation=true;
-    bool controls=true;
+    void run() override;
+
+    bool does_auto_navigation() const override { return true; }
+
+    bool does_auto_throttle() const override { return true; }
+
+    //bool navigation=false;
+    //bool controls=true;
 
     void crashThePlane();
     void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
@@ -836,4 +841,5 @@ protected:
 private:
 
     void printState();
+
 };
