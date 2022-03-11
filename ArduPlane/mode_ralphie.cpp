@@ -99,7 +99,7 @@ bool ModeRalphie::_enter() {
     // plane.next_WP_loc.alt = plane.current_loc.alt;
 	// updateCounter = 0;
 
-    trajectory.init();
+    trajectory.init(plane.home);
 
     return true;
 }
@@ -117,7 +117,9 @@ void ModeRalphie::update() {
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
 
-
+    plane.calc_nav_roll();
+    plane.calc_nav_pitch();
+    plane.calc_throttle();
 }
 
 
@@ -135,8 +137,8 @@ void ModeRalphie::navigate() {
     trajectory.update();
 
     /* Update the active waypoint */
-    flightPhase_t nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
-    printf("%d", nextWpPhase);
+    nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
+
 }
 
 

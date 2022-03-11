@@ -1,18 +1,22 @@
 #include "trajectory.h"
 
 
-void RalphieTrajectory::init() {
+void RalphieTrajectory::init(Location home) {
+    TrajectoryHome = home;
+    finalAngle = 0;
     currentWaypointIndex = 0;
     transitionPathSize = 0;
     needToTransition = false;
     transitioning = false;
-    parameters.rad = 1000;
+    parameters.rad = 100;
     parameters.maxAlt = 100;
     parameters.minAlt = 100; 
     parameters.initialAngle = 0;
     parameters.lat = 0;
     parameters.lon = 0;
     parameters.targetVelocity = 20; 
+
+    state = STATE_CIRCLING;
 
     initCircle();
     initSquircle();
@@ -76,7 +80,7 @@ void RalphieTrajectory::initCircle() {
    }
  
   
-    convertWaypointsToLocations(TrajectoryHome, FLIGHT_PHASE_CIRCLE);
+    convertWaypointsToLocations(FLIGHT_PHASE_CIRCLE);
     //printf("\nInnit generated circle\n");
 }
 
@@ -278,7 +282,7 @@ void RalphieTrajectory::initSquircle() {
         waypointsSquircle[i].phase = FLIGHT_PHASE_SEMI_CIRCLE;
     }
     //printf("\nEnd of initSquircle\n");
-    convertWaypointsToLocations(TrajectoryHome, FLIGHT_PHASE_STRAIGHT);
+    convertWaypointsToLocations(FLIGHT_PHASE_STRAIGHT);
 }
 
  void RalphieTrajectory::updateTransition(){
@@ -341,7 +345,7 @@ void RalphieTrajectory::initSquircle() {
        waypointsTransition[i].phase = FLIGHT_PHASE_TRANSITION;
 
    }
-convertWaypointsToLocations(TrajectoryHome, FLIGHT_PHASE_TRANSITION);
+convertWaypointsToLocations(FLIGHT_PHASE_TRANSITION);
  }
 void RalphieTrajectory::updatePath() {
 
@@ -367,7 +371,7 @@ void RalphieTrajectory::updatePath() {
         waypointsRotated[i].yaw= waypointsSquircle[i].yaw;
         waypointsRotated[i].phase = waypointsSquircle[i].phase;
     }
-    convertWaypointsToLocations(TrajectoryHome, FLIGHT_PHASE_SEMI_CIRCLE);
+    convertWaypointsToLocations(FLIGHT_PHASE_SEMI_CIRCLE);
     
 }
 
@@ -400,9 +404,9 @@ void RalphieTrajectory::averageWind() {
 
     /* Use the sum to compute the average vector and angle */
     currentWindEstimate = sum / WIND_BUFFER_SIZE;
-    currentWindAngleEstimate = RAD_TO_DEG * atanF(currentWindEstimate.y / currentWindEstimate.x);
+    currentWindAngleEstimate = atanF(currentWindEstimate.y / currentWindEstimate.x);
 
-    printf("Estimated wind direction: %.3f\n", currentWindAngleEstimate);
+    // printf("Estimated wind direction: %.3f\n", currentWindAngleEstimate);
 }
 
 
@@ -412,37 +416,37 @@ void RalphieTrajectory::resetWindAverage() {
 }
 
 
-void RalphieTrajectory::convertWaypointsToLocations(Location home, flightPhase_t currentPhase){
+void RalphieTrajectory::convertWaypointsToLocations(flightPhase_t currentPhase){
     //iterate through length of given array of aircraftStateT to convert into a location array adjusted for alt in cm and x/y in lat/lon. 
     if (currentPhase == FLIGHT_PHASE_SEMI_CIRCLE ){
         for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            waypointsRotatedLoc[i].alt = home.alt + ((waypointsRotated[i].position.z)*100);
-            waypointsRotatedLoc[i].lat = ((home.lat*LATLON_TO_M) + waypointsRotated[i].position.x)*LATLON_TO_M_INV;
-            waypointsRotatedLoc[i].lng = ((home.lng*LATLON_TO_M) + waypointsRotated[i].position.y)*LATLON_TO_M_INV;
+            waypointsRotatedLoc[i].alt = TrajectoryHome.alt + ((waypointsRotated[i].position.z)*100);
+            waypointsRotatedLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypointsRotated[i].position.x)*LATLON_TO_M_INV;
+            waypointsRotatedLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypointsRotated[i].position.y)*LATLON_TO_M_INV;
             //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
         }
     }
     if (currentPhase == FLIGHT_PHASE_STRAIGHT ){
         for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            waypointsSquircleLoc[i].alt = home.alt + ((waypointsRotated[i].position.z)*100);
-            waypointsSquircleLoc[i].lat = ((home.lat*LATLON_TO_M) + waypointsRotated[i].position.x)*LATLON_TO_M_INV;
-            waypointsSquircleLoc[i].lng = ((home.lng*LATLON_TO_M) + waypointsRotated[i].position.y)*LATLON_TO_M_INV;
+            waypointsSquircleLoc[i].alt = TrajectoryHome.alt + ((waypointsRotated[i].position.z)*100);
+            waypointsSquircleLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypointsRotated[i].position.x)*LATLON_TO_M_INV;
+            waypointsSquircleLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypointsRotated[i].position.y)*LATLON_TO_M_INV;
             //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
         }
     }
     if (currentPhase == FLIGHT_PHASE_CIRCLE ){
         for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            circleWaypointsLoc[i].alt = home.alt + ((waypointsSquircle[i].position.z)*100);
-            circleWaypointsLoc[i].lat = ((home.lat*LATLON_TO_M) + waypoints[i].position.x)*LATLON_TO_M_INV;
-            circleWaypointsLoc[i].lng = ((home.lng*LATLON_TO_M) + waypoints[i].position.y)*LATLON_TO_M_INV;
+            circleWaypointsLoc[i].alt = TrajectoryHome.alt + ((waypointsSquircle[i].position.z)*100);
+            circleWaypointsLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypoints[i].position.x)*LATLON_TO_M_INV;
+            circleWaypointsLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypoints[i].position.y)*LATLON_TO_M_INV;
             //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
         }
     }
     if (currentPhase == FLIGHT_PHASE_TRANSITION ){
         for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            waypointsTransitionLoc[i].alt = home.alt + ((waypointsSquircle[i].position.z)*100);
-            waypointsTransitionLoc[i].lat = ((home.lat*LATLON_TO_M) + waypointsTransition[i].position.x)*LATLON_TO_M_INV;
-            waypointsTransitionLoc[i].lng = ((home.lng*LATLON_TO_M) + waypointsTransition[i].position.y)*LATLON_TO_M_INV;
+            waypointsTransitionLoc[i].alt = TrajectoryHome.alt + ((waypointsSquircle[i].position.z)*100);
+            waypointsTransitionLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypointsTransition[i].position.x)*LATLON_TO_M_INV;
+            waypointsTransitionLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypointsTransition[i].position.y)*LATLON_TO_M_INV;
             //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
         }
     }
@@ -455,8 +459,11 @@ void RalphieTrajectory::update() {
     if (state == STATE_TRANSITIONING)
         return;
 
+    if (state == STATE_CIRCLING)
+        return;
+
     /* If the difference between current wind and current path is greater than the threshold, rotate the paths */
-    if (fabsf(currentWindAngleEstimate - currentPathDirection) > ROTATION_THRESHOLD) {
+    if (fabsf(currentWindAngleEstimate - finalAngle) > ROTATION_THRESHOLD) {
         finalAngle = currentWindAngleEstimate;
         updateTransition();
         needToTransition = true;
@@ -466,12 +473,14 @@ void RalphieTrajectory::update() {
 
 flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Location current_loc, Location &next_WP_loc) {
 
+    // printf("Checking for waypoint switch\n");
 
     /* If we have passed the current waypoint being tracked */
     if (current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
-        // memcpy(prev_WP_loc, next_WP_loc, sizeof(Location));
-
+        prev_WP_loc = next_WP_loc;
         flightPhase_t phase;
+
+        printf("WARIO: SWITCHING NEXT WP LOC\n");
 
         /* WARIO State Machine */
         switch (state) {
@@ -485,14 +494,14 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                     updatePath();
                     
                     currentWaypointIndex = 0;
-                    //memcpy(next_WP_loc, * First location in transition trajectory *, sizeof(Location)); // FIXME: make sure correct array
+                    next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
                     state = STATE_TRANSITIONING;
                     phase = FLIGHT_PHASE_TRANSITION;
                     break;
                 }
 
                 /* Copy next waypoint from CIRCLE array */
-                //memcpy(next_WP_loc, * Location from circle array *, sizeof(Locationi));
+                next_WP_loc = circleWaypointsLoc[currentWaypointIndex];
                 phase = FLIGHT_PHASE_CIRCLE;
                 break;
                 
@@ -504,7 +513,8 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                     /* Update the path based on the angle used to rotate the transition trajectory */
                     updatePath();
                     currentWaypointIndex = 0;
-                    //memcpy(next_WP_loc, * First location in transition trajectory *, sizeof(Location)); // FIXME: make sure correct array
+
+                    next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
                     needToTransition = false;
                     state = STATE_TRANSITIONING;
                     phase = FLIGHT_PHASE_TRANSITION;
@@ -512,7 +522,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 }
 
                 /* Copy the next waypoint in the SQUIRCLE to the next_WP_loc */ 
-                // memcpy(next_WP_loc, currentTrajectory[currentWaypointIndex], sizeof(Location));  // FIXME: make sure arrays are correct names
+                next_WP_loc = waypointsRotatedLoc[currentWaypointIndex];
                 phase = phases[currentWaypointIndex];
                 break;
 
@@ -522,7 +532,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 if (currentWaypointIndex == transitionPathSize) {
 
                     currentWaypointIndex = 0;
-                    // memcpy(next_WP_loc, currentTrajectory[currentWaypointIndex], sizeof(Location));
+                    next_WP_loc = waypointsRotatedLoc[currentWaypointIndex];
                     state = STATE_NORMAL;
                     phase = phases[currentWaypointIndex];
                     currentPathDirection = finalAngle;
@@ -530,7 +540,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 }
 
                 /* Copy the next waypoint in the TRANSITION to the next_WP_loc */ 
-                // memcpy(next_WP_loc, currentTrajectory[currentWaypointIndex], sizeof(Location));  // FIXME: make sure arrays are correct names
+                next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
                 phase = FLIGHT_PHASE_TRANSITION;
                 break; 
 
@@ -540,7 +550,11 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 break;
         }
 
+        printf("TRACKING POSITION: %.3f, %.3f\n", (next_WP_loc.lat - TrajectoryHome.lat)*LATLON_TO_M, (next_WP_loc.lng - TrajectoryHome.lng)*LATLON_TO_M);
+        printf("TRACKING WAYIPOINT NUMBER %d\n", currentWaypointIndex);
+        printf("IN WARIO STATE %d\n", state);
         currentWaypointIndex++;
+
         return phase;
     }
 

@@ -96,6 +96,8 @@ void ModeAuto::update()
     } else {
         // we are doing normal AUTO flight, the special cases
         // are for takeoff and landing
+        printf("\n\nSWITCHING TO RALPHIE\n\n");
+        plane.set_mode(plane.mode_ralphie, ModeReason::INITIALISED);
         if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
             plane.steer_state.hold_course_cd = -1;
         }

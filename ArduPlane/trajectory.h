@@ -21,7 +21,7 @@
 #define WIND_BUFFER_SIZE (20)
 #define DegreeAdjustment (111139)
 
-#define ROTATION_THRESHOLD (15) /* deg */
+#define ROTATION_THRESHOLD (15)*PI/180 /* deg */
 
 
 typedef struct {
@@ -192,7 +192,7 @@ class RalphieTrajectory {
      * @brief function used to convert calculated trajectories into arrays of data in Location class form for wp allocation. 
      * 
      */
-    void convertWaypointsToLocations(Location home, flightPhase_t currentPhase);
+    void convertWaypointsToLocations(flightPhase_t currentPhase);
 
     void update();
 
@@ -200,7 +200,7 @@ class RalphieTrajectory {
 
     uint8_t currentWaypointIndex;
 
-    void init();
+    void init(Location home);
 
     bool needToTransition;
     bool transitioning;

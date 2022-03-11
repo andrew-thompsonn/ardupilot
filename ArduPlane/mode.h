@@ -748,6 +748,8 @@ public:
     bool navigation=true;
     bool controls=true;
 
+    flightPhase_t nextWpPhase;
+
     void crashThePlane();
     void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
 
