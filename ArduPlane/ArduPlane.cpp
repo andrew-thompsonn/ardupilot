@@ -53,7 +53,7 @@ SCHED_TASK_CLASS arguments:
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
                            // Units:   Hz      us
 	// SCHED_TASK(update_state, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
-    SCHED_TASK(update_trajectory,       1,     50,   3),    /* TODO: determine correct scheduler parameters */
+   
 	// SCHED_TASK(lqt_controller, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
     SCHED_TASK(ahrs_update,           400,    400,   3),
     SCHED_TASK(read_radio,             50,    100,   6),
@@ -157,54 +157,7 @@ constexpr int8_t Plane::_failsafe_priorities[7];
 constexpr int8_t Plane::_failsafe_priorities[6];
 #endif
 
- void Plane::update_trajectory() {
-
-    // update the initial GPS location for calculations of all trajectories. 
-    //this is done from the set "home" Loc that is set when vehicle is armed. 
-    //test if home is working
-    printf("Home Lat: %.6d, Home Long: %.4d, Home Alt: %.6d\n", home.lat,home.lng,home.alt);
-    //test cartesian to degree conversion within Location class. 
-    //int32_t testAlt = home.alt + 100;
-    //int32_t testLat = ((home.lat*LATLON_TO_M) + 100)*LATLON_TO_M_INV;
-    //printf("Adj alt: %.6d, Adj lat: %.6d\n", testAlt, testLat);
-    //test parameters for init
-    warioInput_t testParameters;
-
-    testParameters.lat = 0.000; //GPS coordinates
-    testParameters.lon = 0.000; //GPS coordinates
-    testParameters.rad = 1000; //meters divided by 111111 to convert to deg (GPS)
-    testParameters.maxAlt = 100.0;  //meters
-    testParameters.minAlt = 0.0;  
-    testParameters.initialAngle = 0.00;
-    testParameters.targetVelocity = 20.0;
-
-    Vector3f windEstimate;
-    windEstimate.x = 0;
-    windEstimate.y = 0;
-    windEstimate.z = 0;
-
-    Vector3f pastWindEstimate;
-    pastWindEstimate.x = 0;
-    pastWindEstimate.y = 0;
-    pastWindEstimate.z = 0;
-
-    circleTrajectory.initCircle(testParameters);
-    printf("\nran initCircle()\n");
-    circleTrajectory.initSquircle(testParameters);
-    printf("\nran initSquircle()\n");
-    circleTrajectory.updatePath(testParameters, windEstimate);
-    printf("\nran updatePath()\n");
-    circleTrajectory.updateTransition(testParameters, windEstimate, pastWindEstimate); 
-    printf("\nran updateTransition()\n");
-
-    flightPhase_t currentPhase = FLIGHT_PHASE_CIRCLE;
-    circleTrajectory.convertWaypointsToLocations(home, currentPhase);
-    printf("\n ran waypoint conversion \n");
-
-    
-
- }
-
+ 
 
 // update AHRS system
 void Plane::ahrs_update()

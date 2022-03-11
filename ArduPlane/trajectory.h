@@ -40,6 +40,7 @@ typedef struct {
 } warioInput_t;
 
 
+
 typedef enum {
 
     STATE_CIRCLING,
@@ -50,6 +51,14 @@ typedef enum {
 
 class RalphieTrajectory {
     public:
+    /*
+    *Initial Parameter creation for use in trajectory functions
+    */
+    warioInput_t parameters;
+
+    //set initial location home
+    Location TrajectoryHome;
+
     /**
      *  The current estimation of wind vector
      * 
@@ -75,11 +84,23 @@ class RalphieTrajectory {
      */
     aircraftState_t waypoints[WARIO_TRAJECTORY_SIZE];
 
+     /**
+     * Array of aircraft states representing the trajectory in location class
+     * 
+     */
+    Location circleWaypointsLoc[WARIO_TRAJECTORY_SIZE];
+
     /**
      * Array of aircraft states representing the trajectory
      * 
      */
     aircraftState_t waypointsSquircle[WARIO_TRAJECTORY_SIZE];
+
+    /**
+     * Array of aircraft states representing the trajectory
+     * non-rotated squircle array in Location class. 
+     */
+    Location waypointsSquircleLoc[WARIO_TRAJECTORY_SIZE];
 
      /**
      * Array of aircraft states representing the trajectory of the transition
@@ -87,11 +108,23 @@ class RalphieTrajectory {
      */
     aircraftState_t waypointsTransition[WARIO_TRAJECTORY_SIZE];
 
+     /**
+     * Array of aircraft states representing the trajectory of the transition
+     * transition waypoints in location array
+     */
+    Location waypointsTransitionLoc[WARIO_TRAJECTORY_SIZE];
+
     /**
      * Array of aircraft states representing the trajectory of the transition
      * 
      */
     aircraftState_t waypointsRotated[WARIO_TRAJECTORY_SIZE];
+
+    /**
+     * Array of aircraft states representing the trajectory of the transition
+     * Rotated squircle waypoints in location form
+     */
+    Location waypointsRotatedLoc[WARIO_TRAJECTORY_SIZE];
 
 
      // array of wind buffer values
@@ -113,7 +146,7 @@ class RalphieTrajectory {
      * @brief array of location waypoints for integration with auto controller. 
      * 
      */
-    Location currentTrajectory[WARIO_TRAJECTORY_SIZE];
+
     flightPhase_t phases[WARIO_TRAJECTORY_SIZE];
 
 
@@ -121,25 +154,25 @@ class RalphieTrajectory {
      *  Generate the default circular trajectory 
      * 
      */
-    void initCircle(warioInput_t parameters);
+    void initCircle();
 
         /**
      * Generate the default circular trajectory 
      * 
      */
-    void initSquircle(warioInput_t parameters);
+    void initSquircle();
 
     /**
      * @brief Update the trajectory based on the current wind estimate
      * // TODO: convert parameters to member variable (store in class)
      */
-    void updatePath(warioInput_t parameters, Vector3f windEstimate);
+    void updatePath();
 
      /**
      * @brief Update the transition based on wind direction and previous wind direction
      * // TODO: convert parameters to member variable (store in class)
      */
-    void updateTransition(warioInput_t parameters, Vector3f windEstimate, Vector3f pastWindEstimate);
+    void updateTransition();
 
   
     /**
