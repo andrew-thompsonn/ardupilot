@@ -1,5 +1,13 @@
 #include "trajectory.h"
 
+
+void RalphieTrajectory::init() {
+    currentWaypointIndex = 0;
+    transitionPathSize = 0;
+    needToTransition = false;
+    transitioning = false;
+}
+
 void RalphieTrajectory::initCircle(warioInput_t parameters) {
     //generate initial circular trajectory based off of given radius and central location. 
     angles[0] = parameters.initialAngle;
@@ -263,6 +271,9 @@ void RalphieTrajectory::initSquircle(warioInput_t parameters) {
 }
 
  void RalphieTrajectory::updateTransition(warioInput_t parameters, Vector3f windEstimate, Vector3f pastWindEstimate){
+
+    // TODO: Base rotation off of 'finalAngle'
+
     // printf("\nStart of updateTransition\n");
     //rotation angle defined as angle of rotation counterclockwise from 0  to final starting angle to next squircle. 
     //rotationAngle = tanf(windEstimate.x/windEstimate.y)
@@ -322,6 +333,8 @@ void RalphieTrajectory::initSquircle(warioInput_t parameters) {
 
  }
 void RalphieTrajectory::updatePath(warioInput_t parameters, Vector3f windEstimate) {
+
+    // TODO: Base rotation off of 'finalAngle'
   
     // float rotationAngle = tanf(windEstimate.x/windEstimate.y); 
     float rotationAngle = PI/8;
@@ -422,7 +435,110 @@ void RalphieTrajectory::convertWaypointsToLocations(Location home, flightPhase_t
             //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
         }
     }
-    
 }
 
+
+void RalphieTrajectory::update() {
+
+    /* If we are already transitioning, we don't want to touch anything */ 
+    if (state == STATE_TRANSITIONING)
+        return;
+
+    /* If the difference between current wind and current path is greater than the threshold, rotate the paths */
+    if (fabsf(currentWindAngleEstimate - currentPathDirection) > ROTATION_THRESHOLD) {
+        finalAngle = currentWindAngleEstimate;
+        //updateTransition();
+        needToTransition = true;
+    }
+}
+
+
+flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Location current_loc, Location &next_WP_loc) {
+
+
+    /* If we have passed the current waypoint being tracked */
+    if (current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
+        // memcpy(prev_WP_loc, next_WP_loc, sizeof(Location));
+
+        flightPhase_t phase;
+
+        /* WARIO State Machine */
+        switch (state) {
+
+            case STATE_CIRCLING:
+
+                if (currentWaypointIndex == WARIO_TRAJECTORY_SIZE) {
+
+                    finalAngle = currentWindAngleEstimate;
+                    //updateTransition();
+                    //updatePath();
+                    
+                    currentWaypointIndex = 0;
+                    //memcpy(next_WP_loc, * First location in transition trajectory *, sizeof(Location)); // FIXME: make sure correct array
+                    state = STATE_TRANSITIONING;
+                    phase = FLIGHT_PHASE_TRANSITION;
+                    break;
+                }
+
+                /* Copy next waypoint from CIRCLE array */
+                //memcpy(next_WP_loc, * Location from circle array *, sizeof(Locationi));
+                phase = FLIGHT_PHASE_CIRCLE;
+                break;
+                
+            case STATE_NORMAL:  
+
+                /* If the we have reached the end of a squircle and need a trajectory */ 
+                if (currentWaypointIndex == WARIO_TRAJECTORY_SIZE && needToTransition) {
+
+                    /* Update the path based on the angle used to rotate the transition trajectory */
+                    //updatePath();
+                    currentWaypointIndex = 0;
+                    //memcpy(next_WP_loc, * First location in transition trajectory *, sizeof(Location)); // FIXME: make sure correct array
+                    needToTransition = false;
+                    state = STATE_TRANSITIONING;
+                    phase = FLIGHT_PHASE_TRANSITION;
+                    break;
+                }
+
+                /* Copy the next waypoint in the SQUIRCLE to the next_WP_loc */ 
+                // memcpy(next_WP_loc, currentTrajectory[currentWaypointIndex], sizeof(Location));  // FIXME: make sure arrays are correct names
+                phase = phases[currentWaypointIndex];
+                break;
+
+            case STATE_TRANSITIONING:
+
+                /* If we have reached the end of a transition path */
+                if (currentWaypointIndex == transitionPathSize) {
+
+                    currentWaypointIndex = 0;
+                    // memcpy(next_WP_loc, currentTrajectory[currentWaypointIndex], sizeof(Location));
+                    state = STATE_NORMAL;
+                    phase = phases[currentWaypointIndex];
+                    currentPathDirection = finalAngle;
+                    break;
+                }
+
+                /* Copy the next waypoint in the TRANSITION to the next_WP_loc */ 
+                // memcpy(next_WP_loc, currentTrajectory[currentWaypointIndex], sizeof(Location));  // FIXME: make sure arrays are correct names
+                phase = FLIGHT_PHASE_TRANSITION;
+                break; 
+
+            default:
+                phase = FLIGHT_PHASE_STRAIGHT; // TODO: wtf should be returned here
+                /* Something went wrong */
+                break;
+        }
+
+        currentWaypointIndex++;
+        return phase;
+    }
+
+    /* We didn't pass a waypoint, but still need to return the correct flight phase */
+    if (state == STATE_CIRCLING)
+        return FLIGHT_PHASE_CIRCLE;
+    else if (state == STATE_NORMAL)
+        return phases[currentWaypointIndex];
+    else
+        return FLIGHT_PHASE_CIRCLE; 
+}
 

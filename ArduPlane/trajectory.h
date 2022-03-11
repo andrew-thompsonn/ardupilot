@@ -21,6 +21,8 @@
 #define WIND_BUFFER_SIZE (20)
 #define DegreeAdjustment (111139)
 
+#define ROTATION_THRESHOLD (15) /* deg */
+
 
 typedef struct {
 
@@ -36,6 +38,14 @@ typedef struct {
     float targetVelocity;
 
 } warioInput_t;
+
+
+typedef enum {
+
+    STATE_CIRCLING,
+    STATE_NORMAL,
+    STATE_TRANSITIONING
+} warioEngineState_t;
 
 
 class RalphieTrajectory {
@@ -104,7 +114,7 @@ class RalphieTrajectory {
      * 
      */
     Location currentTrajectory[WARIO_TRAJECTORY_SIZE];
-
+    flightPhase_t phases[WARIO_TRAJECTORY_SIZE];
 
 
     /**
@@ -121,13 +131,13 @@ class RalphieTrajectory {
 
     /**
      * @brief Update the trajectory based on the current wind estimate
-     * 
+     * // TODO: convert parameters to member variable (store in class)
      */
     void updatePath(warioInput_t parameters, Vector3f windEstimate);
 
      /**
      * @brief Update the transition based on wind direction and previous wind direction
-     * 
+     * // TODO: convert parameters to member variable (store in class)
      */
     void updateTransition(warioInput_t parameters, Vector3f windEstimate, Vector3f pastWindEstimate);
 
@@ -150,6 +160,21 @@ class RalphieTrajectory {
      * 
      */
     void convertWaypointsToLocations(Location home, flightPhase_t currentPhase);
+
+    void update();
+
+    flightPhase_t fillNextWaypoint(Location &prev_WP_loc, Location current_loc, Location &next_WP_loc);
+
+    uint8_t currentWaypointIndex;
+
+    void init();
+
+    bool needToTransition;
+    bool transitioning;
+
+    warioEngineState_t state;
+
+
 
 
     // Define init circle variables and arrays. 
@@ -215,6 +240,10 @@ class RalphieTrajectory {
     float finalAngle;
     float transitionSize;
     float currentAngle;
+
+    uint8_t transitionPathSize;
+
+    float currentPathDirection; /* Angle in radians CCW from north */
 
 };
 

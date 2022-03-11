@@ -91,13 +91,15 @@ bool ModeRalphie::_enter() {
     
     /* Enters the mode, perform tasks that only need to happen on initialization */
     // trajectory.init();
-    printState();
+    // printState();
 
-    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
-    controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
+    // controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
+    // controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
 
-    plane.next_WP_loc.alt = plane.current_loc.alt;
-	updateCounter = 0;
+    // plane.next_WP_loc.alt = plane.current_loc.alt;
+	// updateCounter = 0;
+
+    trajectory.init();
 
     return true;
 }
@@ -115,13 +117,7 @@ void ModeRalphie::update() {
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
 
-	if (UPDATE_FREQUENCY/4 <= updateCounter++) {
 
-		resetUpdateCounter();
-        Vector3f windEstimate = plane.ahrs.wind_estimate();
-        printf("Updating wind average with vector [%.3f, %.3f, %.3f]\n", windEstimate.x, windEstimate.y, windEstimate.z);
-        trajectory.updateAverageWind(windEstimate);
-	}
 }
 
 
@@ -131,15 +127,16 @@ void ModeRalphie::navigate() {
     if (navigation == INACTIVE)
         return;
     
-    //trajectory.update();
+    /* Add to the wind rolling average */
+    Vector3f windEstimate = plane.ahrs.wind_estimate();
+    trajectory.updateAverageWind(windEstimate);
 
-    plane.nav_roll_cd  = plane.roll_limit_cd / 3;
-    plane.update_load_factor();
-    plane.calc_nav_pitch();
-    plane.calc_throttle();
+    /* Update the trajectory */
+    trajectory.update();
 
-    /* Update plane.next_WP_loc, plane.current_loc, plane.prev_WP_loc etc */
-    //printf("RALPHIE NAVIGATING\n");
+    /* Update the active waypoint */
+    flightPhase_t nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
+    printf("%d", nextWpPhase);
 }
 
 
