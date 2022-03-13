@@ -810,14 +810,16 @@ public:
     const char *name() const override { return "LQT"; }
     const char *name4() const override { return "LQT"; }
 
-    // methods that affect movement of the vehicle in this mode
-    bool allows_throttle_nudging() const override { return true; }
+    bool does_automatic_thermal_switch() const override { return true; }
 
+    // methods that affect movement of the vehicle in this mode
     void update() override;
 
     void navigate() override;
 
-    void run() override;
+    //void run() override;
+
+    bool allows_throttle_nudging() const override { return true; }
 
     bool does_auto_navigation() const override { return true; }
 
@@ -837,6 +839,7 @@ protected:
     aircraftState_t desiredState;
 
     bool _enter() override;
+    void _exit() override;
 
 private:
 
