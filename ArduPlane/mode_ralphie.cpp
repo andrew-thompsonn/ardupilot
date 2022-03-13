@@ -117,9 +117,8 @@ void ModeRalphie::update() {
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
 
-    plane.calc_nav_roll();
-    plane.calc_nav_pitch();
-    plane.calc_throttle();
+
+    //const float aileron = rollController.get_rate_out(nav_scripting.roll_rate_dps, speed_scaler);
 }
 
 
@@ -138,6 +137,14 @@ void ModeRalphie::navigate() {
 
     /* Update the active waypoint */
     nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
+
+    plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
+    plane.calc_nav_roll();
+    plane.calc_nav_pitch();
+    plane.calc_throttle();
+
+    printf("CURRENT POSITION: %.3f, %.3f, %.3f\n", (plane.current_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.current_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.current_loc.alt/100.0);
+    printf("TRACKING POSITION: %.3f, %.3f, %.3f\n\n", (plane.next_WP_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.next_WP_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.next_WP_loc.alt/100.0);
 
 }
 

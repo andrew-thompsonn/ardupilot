@@ -192,7 +192,7 @@ class RalphieTrajectory {
      * @brief function used to convert calculated trajectories into arrays of data in Location class form for wp allocation. 
      * 
      */
-    void convertWaypointsToLocations(flightPhase_t currentPhase);
+    void convertWaypointsToLocations(Location locations[], aircraftState_t states[]);
 
     void update();
 

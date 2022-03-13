@@ -80,7 +80,7 @@ void RalphieTrajectory::initCircle() {
    }
  
   
-    convertWaypointsToLocations(FLIGHT_PHASE_CIRCLE);
+    convertWaypointsToLocations(circleWaypointsLoc, waypoints);
     //printf("\nInnit generated circle\n");
 }
 
@@ -282,7 +282,7 @@ void RalphieTrajectory::initSquircle() {
         waypointsSquircle[i].phase = FLIGHT_PHASE_SEMI_CIRCLE;
     }
     //printf("\nEnd of initSquircle\n");
-    convertWaypointsToLocations(FLIGHT_PHASE_STRAIGHT);
+    // convertWaypointsToLocations(FLIGHT_PHASE_STRAIGHT);
 }
 
  void RalphieTrajectory::updateTransition(){
@@ -345,7 +345,7 @@ void RalphieTrajectory::initSquircle() {
        waypointsTransition[i].phase = FLIGHT_PHASE_TRANSITION;
 
    }
-convertWaypointsToLocations(FLIGHT_PHASE_TRANSITION);
+convertWaypointsToLocations(waypointsTransitionLoc, waypointsTransition);
  }
 void RalphieTrajectory::updatePath() {
 
@@ -371,7 +371,7 @@ void RalphieTrajectory::updatePath() {
         waypointsRotated[i].yaw= waypointsSquircle[i].yaw;
         waypointsRotated[i].phase = waypointsSquircle[i].phase;
     }
-    convertWaypointsToLocations(FLIGHT_PHASE_SEMI_CIRCLE);
+    convertWaypointsToLocations(waypointsRotatedLoc, waypointsRotated);
     
 }
 
@@ -416,39 +416,14 @@ void RalphieTrajectory::resetWindAverage() {
 }
 
 
-void RalphieTrajectory::convertWaypointsToLocations(flightPhase_t currentPhase){
-    //iterate through length of given array of aircraftStateT to convert into a location array adjusted for alt in cm and x/y in lat/lon. 
-    if (currentPhase == FLIGHT_PHASE_SEMI_CIRCLE ){
-        for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            waypointsRotatedLoc[i].alt = TrajectoryHome.alt + ((waypointsRotated[i].position.z)*100);
-            waypointsRotatedLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypointsRotated[i].position.x)*LATLON_TO_M_INV;
-            waypointsRotatedLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypointsRotated[i].position.y)*LATLON_TO_M_INV;
-            //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
-        }
-    }
-    if (currentPhase == FLIGHT_PHASE_STRAIGHT ){
-        for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            waypointsSquircleLoc[i].alt = TrajectoryHome.alt + ((waypointsRotated[i].position.z)*100);
-            waypointsSquircleLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypointsRotated[i].position.x)*LATLON_TO_M_INV;
-            waypointsSquircleLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypointsRotated[i].position.y)*LATLON_TO_M_INV;
-            //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
-        }
-    }
-    if (currentPhase == FLIGHT_PHASE_CIRCLE ){
-        for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            circleWaypointsLoc[i].alt = TrajectoryHome.alt + ((waypointsSquircle[i].position.z)*100);
-            circleWaypointsLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypoints[i].position.x)*LATLON_TO_M_INV;
-            circleWaypointsLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypoints[i].position.y)*LATLON_TO_M_INV;
-            //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
-        }
-    }
-    if (currentPhase == FLIGHT_PHASE_TRANSITION ){
-        for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
-            waypointsTransitionLoc[i].alt = TrajectoryHome.alt + ((waypointsSquircle[i].position.z)*100);
-            waypointsTransitionLoc[i].lat = ((TrajectoryHome.lat*LATLON_TO_M) + waypointsTransition[i].position.x)*LATLON_TO_M_INV;
-            waypointsTransitionLoc[i].lng = ((TrajectoryHome.lng*LATLON_TO_M) + waypointsTransition[i].position.y)*LATLON_TO_M_INV;
-            //printf("Desired Lat: %.4d, Desired Lng: %.4d, Desired Alt: %.4d \n", currentTrajectory[i].lat,currentTrajectory[i].lng,currentTrajectory[i].alt );
-        }
+
+void RalphieTrajectory::convertWaypointsToLocations(Location locations[], aircraftState_t states[]) {
+
+    for (uint8_t index = 0; index < WARIO_TRAJECTORY_SIZE; index++) {
+
+        locations[index].alt = TrajectoryHome.alt + (int32_t)states[index].position.z * 100;
+        locations[index].lat = ((TrajectoryHome.lat * LATLON_TO_M) + states[index].position.x) * LATLON_TO_M_INV;
+        locations[index].lng = ((TrajectoryHome.lng * LATLON_TO_M) + states[index].position.y) * LATLON_TO_M_INV;
     }
 }
 

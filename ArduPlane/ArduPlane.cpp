@@ -248,18 +248,18 @@ void Plane::update_logging1(void)
     if (should_log(MASK_LOG_ATTITUDE_MED))
         ahrs.Write_AOA_SSA();
 
-    float amps, mah;
-    bool ampsReceived = battery.current_amps(amps);
-    bool mahReceived = battery.consumed_mah(mah);
-    float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
-    float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
-    float rudder  = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
-    float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
-    if (ampsReceived && mahReceived) {
-        FILE *controls_file = fopen("CONTROLS_LOG", "a");
-        fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", throttle, aileron, elevator, rudder, amps, mah);
-        fclose(controls_file);
-    }
+    // float amps, mah;
+    // bool ampsReceived = battery.current_amps(amps);
+    // bool mahReceived = battery.consumed_mah(mah);
+    // float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
+    // float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
+    // float rudder  = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
+    // float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
+    // if (ampsReceived && mahReceived) {
+        // FILE *controls_file = fopen("CONTROLS_LOG", "a");
+        // fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", throttle, aileron, elevator, rudder, amps, mah);
+        // fclose(controls_file);
+    // }
 }
 
 /*
