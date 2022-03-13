@@ -748,6 +748,8 @@ public:
     bool navigation=true;
     bool controls=true;
 
+    uint32_t executionCounter = 0;
+
     flightPhase_t nextWpPhase;
 
     void crashThePlane();

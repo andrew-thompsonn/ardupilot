@@ -4,11 +4,12 @@
 void RalphieTrajectory::init(Location home) {
     TrajectoryHome = home;
     finalAngle = 0;
+    startAngle = 0;
     currentWaypointIndex = 0;
     transitionPathSize = 0;
     needToTransition = false;
     transitioning = false;
-    parameters.rad = 100;
+    parameters.rad = 500;
     parameters.maxAlt = 100;
     parameters.minAlt = 100; 
     parameters.initialAngle = 0;
@@ -20,6 +21,12 @@ void RalphieTrajectory::init(Location home) {
 
     initCircle();
     initSquircle();
+}
+
+
+void RalphieTrajectory::getFirstWaypoint(Location &location) {
+
+    location = circleWaypointsLoc[currentWaypointIndex++];
 }
 
 void RalphieTrajectory::initCircle() {
@@ -88,7 +95,7 @@ void RalphieTrajectory::initCircle() {
 void RalphieTrajectory::initSquircle() {
     //printf("\nStart of initSquircle\n");
     majorAxis = parameters.rad;
-    radiusFactor = 7.0;
+    radiusFactor = 4.0;
     minorAxis = majorAxis/radiusFactor;
     straightDistance = 4 * (majorAxis - minorAxis);
     circleDistance = 2 * PI * minorAxis;
@@ -292,20 +299,21 @@ void RalphieTrajectory::initSquircle() {
     // printf("\nStart of updateTransition\n");
     //rotation angle defined as angle of rotation counterclockwise from 0  to final starting angle to next squircle. 
     //rotationAngle = tanf(windEstimate.x/windEstimate.y)
-    float transitionAngle = PI ;
+    // float transitionAngle = PI ;
+    float transitionAngle = finalAngle;
 
     //generate transition path 
-    startAngle = PI/2;  //previous wind/squircle direction
-    finalAngle = transitionAngle; 
+    // startAngle = PI/3;  //previous wind/squircle direction
+    
     deltaAngle = (2*PI)/WARIO_TRAJECTORY_SIZE;
      if (finalAngle < startAngle){
-        transitionSize = ceilf(((2*PI - startAngle)+ transitionAngle)/deltaAngle);
+        transitionPathSize = ceilf(((2*PI - startAngle)+ transitionAngle)/deltaAngle);
     }else{
-        transitionSize = ceilf((finalAngle-startAngle)/deltaAngle);
+        transitionPathSize = ceilf((finalAngle-startAngle)/deltaAngle);
     }
     //printf("initial Angle: %.3f, final Angle: %.3f, transition size: %.3f\n", startAngle, finalAngle, transitionSize); 
     cRoll = atan2f(powf(parameters.targetVelocity,2),(parameters.rad * 9.81));
-    for (int i = 0; i < transitionSize; i++)
+    for (int i = 0; i < transitionPathSize; i++)
     {   
         if ((startAngle + (i * deltaAngle)) < (2*PI)){
             currentAngle = (startAngle + (i * deltaAngle));
@@ -352,7 +360,8 @@ void RalphieTrajectory::updatePath() {
     // TODO: Base rotation off of 'finalAngle'
   
     // float rotationAngle = tanf(windEstimate.x/windEstimate.y); 
-    float rotationAngle = PI/8;
+    // float rotationAngle = PI/8;
+    float rotationAngle = finalAngle;
 
     for (int i = 0; i < WARIO_TRAJECTORY_SIZE; i++){
         waypointsRotated[i].position.x = (cosf(rotationAngle)*waypointsSquircle[i].position.x - sinf(rotationAngle)*waypointsSquircle[i].position.y);
@@ -438,7 +447,7 @@ void RalphieTrajectory::update() {
         return;
 
     /* If the difference between current wind and current path is greater than the threshold, rotate the paths */
-    if (fabsf(currentWindAngleEstimate - finalAngle) > ROTATION_THRESHOLD) {
+    if (fabsf(currentWindAngleEstimate - startAngle) > ROTATION_THRESHOLD) {
         finalAngle = currentWindAngleEstimate;
         updateTransition();
         needToTransition = true;
@@ -448,14 +457,10 @@ void RalphieTrajectory::update() {
 
 flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Location current_loc, Location &next_WP_loc) {
 
-    // printf("Checking for waypoint switch\n");
-
     /* If we have passed the current waypoint being tracked */
     if (current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
         prev_WP_loc = next_WP_loc;
         flightPhase_t phase;
-
-        printf("WARIO: SWITCHING NEXT WP LOC\n");
 
         /* WARIO State Machine */
         switch (state) {
@@ -467,6 +472,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                     finalAngle = currentWindAngleEstimate;
                     updateTransition();
                     updatePath();
+                    startAngle = finalAngle;
                     
                     currentWaypointIndex = 0;
                     next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
@@ -487,6 +493,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
 
                     /* Update the path based on the angle used to rotate the transition trajectory */
                     updatePath();
+                    startAngle = finalAngle;
                     currentWaypointIndex = 0;
 
                     next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
@@ -525,9 +532,6 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 break;
         }
 
-        printf("TRACKING POSITION: %.3f, %.3f\n", (next_WP_loc.lat - TrajectoryHome.lat)*LATLON_TO_M, (next_WP_loc.lng - TrajectoryHome.lng)*LATLON_TO_M);
-        printf("TRACKING WAYIPOINT NUMBER %d\n", currentWaypointIndex);
-        printf("IN WARIO STATE %d\n", state);
         currentWaypointIndex++;
 
         return phase;
@@ -542,3 +546,20 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
         return FLIGHT_PHASE_CIRCLE; 
 }
 
+
+
+void RalphieTrajectory::printState() {
+
+    switch (state) {
+
+        case STATE_CIRCLING:
+            printf("STATE: CIRCLING %d/%d\n", currentWaypointIndex, WARIO_TRAJECTORY_SIZE);
+            break;
+        case STATE_TRANSITIONING:
+            printf("STATE: TRANSITIONING %d/%d\n", currentWaypointIndex, transitionPathSize);    
+            break;
+        case STATE_NORMAL:
+            printf("STATE: NORMAL %d/%d\n", currentWaypointIndex, WARIO_TRAJECTORY_SIZE);
+            break;
+    }
+}

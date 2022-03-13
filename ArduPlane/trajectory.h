@@ -205,6 +205,9 @@ class RalphieTrajectory {
     bool needToTransition;
     bool transitioning;
 
+    void printState();
+    void getFirstWaypoint(Location &location);
+
     warioEngineState_t state;
 
 

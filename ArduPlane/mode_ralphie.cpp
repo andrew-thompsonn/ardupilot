@@ -75,31 +75,14 @@ void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     for (int i = 0; i < 2; i++) {
         printf("LONGITUDINAL: Computed control input in index %d is %f\n",i,lonInput[i]);
     }
-
-    /*
-    // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]);
-    */
-
 }
 
 
 bool ModeRalphie::_enter() {
     
-    /* Enters the mode, perform tasks that only need to happen on initialization */
-    // trajectory.init();
-    // printState();
-
-    // controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
-    // controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
-
-    // plane.next_WP_loc.alt = plane.current_loc.alt;
-	// updateCounter = 0;
-
     trajectory.init(plane.home);
+    plane.prev_WP_loc = plane.next_WP_loc;
+    trajectory.getFirstWaypoint(plane.next_WP_loc);
 
     return true;
 }
@@ -138,13 +121,20 @@ void ModeRalphie::navigate() {
     /* Update the active waypoint */
     nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
 
+    /* Update navigation controller to track trajectory */
     plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
     plane.calc_nav_roll();
     plane.calc_nav_pitch();
     plane.calc_throttle();
 
-    printf("CURRENT POSITION: %.3f, %.3f, %.3f\n", (plane.current_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.current_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.current_loc.alt/100.0);
-    printf("TRACKING POSITION: %.3f, %.3f, %.3f\n\n", (plane.next_WP_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.next_WP_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.next_WP_loc.alt/100.0);
+    if (executionCounter++ % 10 == 0) {
+        trajectory.printState();
+        printf("CURRENT POSITION: %.3f, %.3f, %.3f\n", (plane.current_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.current_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.current_loc.alt/100.0);
+        printf("TRACKING POSITION: %.3f, %.3f, %.3f\n", (plane.next_WP_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.next_WP_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.next_WP_loc.alt/100.0);
+        printf("WIND ESTIMATE: %.3f\n", trajectory.currentWindAngleEstimate*RAD_TO_DEG);
+        float yaw = plane.ahrs.get_yaw();
+        printf("HEADING: %.3f\n\n", yaw);
+    }
 
 }
 
