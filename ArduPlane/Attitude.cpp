@@ -522,7 +522,19 @@ void Plane::stabilize()
             const float rudder = yawController.get_rate_out(nav_scripting.yaw_rate_dps, speed_scaler, false);
             steering_control.rudder = rudder;
         }
-#endif
+#endif        
+    } else if (control_mode == &mode_lqt &&
+               mission.get_current_nav_cmd().id == MAV_CMD_NAV_SCRIPT_TIME) {
+        // scripting is in control of roll and pitch rates and throttle
+        const float aileron = rollController.get_rate_out(nav_scripting.roll_rate_dps, speed_scaler);
+        const float elevator = pitchController.get_rate_out(nav_scripting.pitch_rate_dps, speed_scaler);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, aileron);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elevator);
+        if (yawController.rate_control_enabled()) {
+            const float rudder = yawController.get_rate_out(nav_scripting.yaw_rate_dps, speed_scaler, false);
+            steering_control.rudder = rudder;
+        }
+
 
     } else if (control_mode == &mode_ralphie && mode_ralphie.controls == ACTIVE) {
         plane.control_mode->run();

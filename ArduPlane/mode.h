@@ -165,6 +165,35 @@ class ModeAuto : public Mode
 {
 public:
 
+    float GAINS_LAT_CIRCLE[2][6] = {
+    {0.1338,0.2023,0.4519,4.4355,2.4290,0.0155},
+    {0.0852,0.1220,0.2525,2.6521,1.5190,0.0100}
+    };
+    float GAINS_LON_CIRCLE[2][6] = {
+    {0.0043,-0.0151,0.0449,0.4706,-0.0097,-0.0016},
+    {-0.0718,0.0068,-0.0195,-0.1674,-0.0023,0.0120}
+    };
+
+    //small curves - semicircle of squircle
+    float GAINS_LAT_CURVE[2][6] = {
+    {0.1338,0.2023,0.4519,4.4355,2.4290,0.0155},
+    {0.0852,0.1220,0.2525,2.6521,1.5190,0.0100}
+    };
+    float GAINS_LON_CURVE[2][6] = {
+    {0.0043,-0.0151,0.0449,0.4706,-0.0097,-0.0016},
+    {-0.0718,0.0068,-0.0195,-0.1674,-0.0023,0.0120}
+    };
+
+    //straight line
+    float GAINS_LAT_LINE[2][6] = {
+    {0.3722,0.3229,0.8161,7.3050,7.3625,0.0831},
+    {0.2561,0.2052,0.5285,4.6685,5.1058,0.0607}
+    };
+    float GAINS_LON_LINE[2][6] = {
+    {0.0162,-0.0857,0.2525,2.6891,-0.0549,-0.0198},
+    {-0.1516,0.0241,-0.0699,-0.6664,-0.0341,0.0293}
+    };
+
     Number mode_number() const override { return Number::AUTO; }
     const char *name() const override { return "AUTO"; }
     const char *name4() const override { return "AUTO"; }
@@ -182,10 +211,20 @@ public:
 
     bool does_auto_throttle() const override { return true; }
 
+    void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
+
 protected:
+
+    aircraftState_t currentState;
+    aircraftState_t desiredState;
 
     bool _enter() override;
     void _exit() override;
+
+private:
+
+    void printState();
+    
 };
 
 
@@ -766,11 +805,7 @@ private:
 };
 
 #include <stdio.h> 
-
-#define ACTIVE      1
-#define INACTIVE    0
-
-
+//IF WE WANT THIS CLASS TO WORK: Need to change everywhere that control_mode == &mode_auto is mentioned to also have &mode_lqt or ralphie...
 class ModeLQT: public Mode {
 
 public:

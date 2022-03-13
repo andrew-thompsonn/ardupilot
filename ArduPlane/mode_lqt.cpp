@@ -3,6 +3,8 @@
 
 bool ModeLQT::_enter()
 {
+    printf("in lqt enter\n");
+
 #if HAL_QUADPLANE_ENABLED
     if (plane.quadplane.available() && plane.quadplane.enable == 2) {
         plane.auto_state.vtol_mode = true;
@@ -14,7 +16,10 @@ bool ModeLQT::_enter()
 #endif
     plane.next_WP_loc = plane.prev_WP_loc = plane.current_loc;
     // start or resume the mission, based on MIS_AUTORESET
+    printf("State num1: %d \n",plane.mission.state());
     plane.mission.start_or_resume();
+    printf("State num2: %d \n",plane.mission.state());
+
 
     if (hal.util->was_watchdog_armed()) {
         if (hal.util->persistent_data.waypoint_num != 0) {
@@ -52,6 +57,7 @@ void ModeLQT::_exit()
 void ModeLQT::update()
 {
     //printf("Waypoint num: %d \n",hal.util->persistent_data.waypoint_num);
+    //printf("State num: %d \n",plane.mission.state());
     if (plane.mission.state() != AP_Mission::MISSION_RUNNING) {
         // this could happen if AP_Landing::restart_landing_sequence() returns false which would only happen if:
         // restart_landing_sequence() is called when not executing a NAV_LAND or there is no previous nav point
@@ -71,6 +77,7 @@ void ModeLQT::update()
 
     if (nav_cmd_id == MAV_CMD_NAV_TAKEOFF ||
         (nav_cmd_id == MAV_CMD_NAV_LAND && plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_ABORT_LAND)) {
+            printf("c\n");
         plane.takeoff_calc_roll();
         plane.takeoff_calc_pitch();
         plane.calc_throttle();
@@ -95,9 +102,11 @@ void ModeLQT::update()
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.nav_scripting.throttle_pct);
 #endif
     } else {
+        //printf("lqt h\n");
         // we are doing normal AUTO flight, the special cases
         // are for takeoff and landing
         if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
+            //printf("lqt i\n");
             plane.steer_state.hold_course_cd = -1;
         }
         plane.calc_nav_roll();

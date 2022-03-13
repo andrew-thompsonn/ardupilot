@@ -81,6 +81,7 @@ void AP_Mission::start()
 /// stop - stops mission execution.  subsequent calls to update() will have no effect until the mission is started or resumed
 void AP_Mission::stop()
 {
+    printf("IN STOP\n");
     _flags.state = MISSION_STOPPED;
 }
 
@@ -532,7 +533,7 @@ bool AP_Mission::set_current_cmd(uint16_t index, bool rewind)
         }
 
         // if we got this far then the mission can safely be "resumed" from the specified index so we set the state to "stopped"
-        //printf("Changing flag to mission stopped :( \n");
+        printf("Changing flag to mission stopped :( \n");
         _flags.state = MISSION_STOPPED;
         return true;
     }

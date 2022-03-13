@@ -1218,6 +1218,14 @@ private:
     float pitch_in_expo(bool use_dz) const;
     float rudder_in_expo(bool use_dz) const;
 
+    enum lqtMode {
+        LQT_DISABLED = 0,
+        LQT_STRAIGHT = 1,
+        LQT_CURVED = 2
+    };
+
+    lqtMode lqtID = LQT_DISABLED;
+
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED
