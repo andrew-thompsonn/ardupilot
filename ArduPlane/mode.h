@@ -806,9 +806,9 @@ public:
     {-0.1516,0.0241,-0.0699,-0.6664,-0.0341,0.0293}
     };
 
-    Number mode_number() const override { return Number::RALPHIE; }
-    const char *name() const override { return "RALPHIE"; }
-    const char *name4() const override { return "RALPHIE"; }
+    Number mode_number() const override { return Number::LQT; }
+    const char *name() const override { return "LQT"; }
+    const char *name4() const override { return "LQT"; }
 
     // methods that affect movement of the vehicle in this mode
     bool allows_throttle_nudging() const override { return true; }

@@ -205,6 +205,7 @@ bool AP_Mission::continue_after_land_check_for_takeoff()
 /// start_or_resume - if MIS_AUTORESTART=0 this will call resume(), otherwise it will call start()
 void AP_Mission::start_or_resume()
 {
+    printf("in start or resume\n");
     if (_restart == 1 && !_force_resume) {
         start();
     } else {
@@ -275,6 +276,7 @@ void AP_Mission::update()
     hal.util->persistent_data.waypoint_num = _nav_cmd.index;
 
     // check if we have an active nav command
+    //printf("active command?: %d\n",!_flags.nav_cmd_loaded || _nav_cmd.index == AP_MISSION_CMD_INDEX_NONE);
     if (!_flags.nav_cmd_loaded || _nav_cmd.index == AP_MISSION_CMD_INDEX_NONE) {
         // advance in mission if no active nav command
         if (!advance_current_nav_cmd()) {
@@ -284,11 +286,14 @@ void AP_Mission::update()
         }
     } else {
         // run the active nav command
+        //printf("above verify command\n");
         if (verify_command(_nav_cmd)) {
             // market _nav_cmd as complete (it will be started on the next iteration)
+            //printf("verified \n");
             _flags.nav_cmd_loaded = false;
             // immediately advance to the next mission command
             if (!advance_current_nav_cmd()) {
+                //printf("inside advance_current_nav_cmd\n");
                 // failure to advance nav command means mission has completed
                 complete();
                 return;
@@ -297,6 +302,7 @@ void AP_Mission::update()
     }
 
     // check if we have an active do command
+    //printf("305 %d \n",!_flags.do_cmd_loaded);
     if (!_flags.do_cmd_loaded) {
         advance_current_do_cmd();
     } else {
@@ -526,6 +532,7 @@ bool AP_Mission::set_current_cmd(uint16_t index, bool rewind)
         }
 
         // if we got this far then the mission can safely be "resumed" from the specified index so we set the state to "stopped"
+        //printf("Changing flag to mission stopped :( \n");
         _flags.state = MISSION_STOPPED;
         return true;
     }
@@ -1702,8 +1709,10 @@ void AP_Mission::complete()
 //      returns true if command is advanced, false if failed (i.e. mission completed)
 bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
 {
+    //printf("in func boi: \n");
     // exit immediately if we're not running
     if (_flags.state != MISSION_RUNNING) {
+        //printf("exiting >:(\n");
         return false;
     }
 
@@ -1749,6 +1758,7 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
             }
             // set current navigation command and start it
             _nav_cmd = cmd;
+            //printf("above start_command with nav cmd: %d, expecting 16\n", _nav_cmd.id);
             if (start_command(_nav_cmd)) {
                 _flags.nav_cmd_loaded = true;
             }

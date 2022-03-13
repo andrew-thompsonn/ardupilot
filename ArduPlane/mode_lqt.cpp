@@ -6,7 +6,7 @@
 //call mode 27 from console to switch to RALPHIE mode//
 void ModeLQT::run() {
 
-    /* For control system -> called from Plane::stablize() in Attitude.cpp line 503 */
+    // For control system -> called from Plane::stablize() in Attitude.cpp line 503 //
     //Can use "past_interval_finish_line" from location library to check if we have passed a certain waypoint
     switch (desiredState.phase) {
      
@@ -41,15 +41,20 @@ void ModeLQT::crashThePlane() {
 }
 
 void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
+    // NEED TO FIGURE OUT HOW TO KEEP MISSION UPDATING WHILE IN THIS MODE
 
     // Function takes in the gain values based on case in switch statement
     AP_Mission::Mission_Command myCmd;
-    plane.mission.read_cmd_from_storage(0,myCmd);
+    //plane.mission.read_cmd_from_storage(0,myCmd);
+    plane.mission.get_next_nav_cmd(0,myCmd);
+    //printf("next command id is: %d\n",myCmd.id);
+    uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
+    
+    //printf("mission state %d\n",plane.mission.state());
+    //printf("Current command: %d\n", nav_cmd_id);
     //printf("Position of x y z: %f %f %f\n",plane.next_WP_loc.lat*LATLON_TO_M,plane.next_WP_loc.lng*LATLON_TO_M,plane.next_WP_loc.alt*LATLON_TO_M);
     //printf("altitude %d\n",myCmd.content.location.alt);
     //printf("is running? %d\n",plane.mission.get_current_nav_cmd().id);
-
-    uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
 
     if (nav_cmd_id == MAV_CMD_NAV_TAKEOFF ||
         (nav_cmd_id == MAV_CMD_NAV_LAND && plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_ABORT_LAND)) {
@@ -96,6 +101,8 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     //_nav_cmd.index looks like it governs whether the misison continues or not
     //line 2452 in AP_Mission.cpp continously updates the previous waypoint
     //value of MAV_CMD_NAV_WAYPOINT == 16
+
+    //can use AP_TECS and AP_L1_Control functions to determine desired roll and pitch angles
     float latStateDesired[6] = {currentState.velocity.y,0,0,0,0,currentState.position.y + 1};
     float lonStateDesired[6] = {0,0,0,currentState.pitch,currentState.position.x,currentState.position.z};
 
@@ -128,7 +135,6 @@ void ModeLQT::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
 
 bool ModeLQT::_enter()
 {
-
     plane.next_WP_loc = plane.prev_WP_loc = plane.current_loc;
     // start or resume the mission, based on MIS_AUTORESET
     plane.mission.start_or_resume();
@@ -148,8 +154,6 @@ bool ModeLQT::_enter()
 void ModeLQT::update() {
     
     /* Called at 400 Hz from scheduler, other miscellaneous items can happen here */
-
-    plane.mission.update();
 
     currentState.roll = plane.ahrs.get_roll();
     currentState.pitch = plane.ahrs.get_pitch();
@@ -185,6 +189,7 @@ void ModeLQT::update() {
 
 void ModeLQT::navigate()
 {
+    //printf("in nav\n");
     if (AP::ahrs().home_is_set()) {
         plane.mission.update();
     }

@@ -51,7 +51,7 @@ void ModeAuto::_exit()
 
 void ModeAuto::update()
 {
-    printf("Waypoint num: %d \n",hal.util->persistent_data.waypoint_num);
+    //printf("Waypoint num: %d \n",hal.util->persistent_data.waypoint_num);
     if (plane.mission.state() != AP_Mission::MISSION_RUNNING) {
         // this could happen if AP_Landing::restart_landing_sequence() returns false which would only happen if:
         // restart_landing_sequence() is called when not executing a NAV_LAND or there is no previous nav point
