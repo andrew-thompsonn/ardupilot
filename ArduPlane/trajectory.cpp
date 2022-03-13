@@ -443,8 +443,15 @@ void RalphieTrajectory::update() {
     if (state == STATE_TRANSITIONING)
         return;
 
+    /* If we are circling, just let the wind averaging fill up */
     if (state == STATE_CIRCLING)
         return;
+
+    /* Check if we need to cancel a previous transition */
+    if (fabsf(currentWindAngleEstimate - startAngle) < ROTATION_THRESHOLD) {
+        needToTransition = false;
+        return;
+    }
 
     /* If the difference between current wind and current path is greater than the threshold, rotate the paths */
     if (fabsf(currentWindAngleEstimate - startAngle) > ROTATION_THRESHOLD) {
@@ -502,6 +509,10 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                     phase = FLIGHT_PHASE_TRANSITION;
                     break;
                 }
+
+                /* If we finish the current loop, but no rotation is needed, reset the index */
+                if (currentWaypointIndex == WARIO_TRAJECTORY_SIZE && !needToTransition)
+                    currentWaypointIndex = 0;
 
                 /* Copy the next waypoint in the SQUIRCLE to the next_WP_loc */ 
                 next_WP_loc = waypointsRotatedLoc[currentWaypointIndex];
