@@ -53,7 +53,7 @@ SCHED_TASK_CLASS arguments:
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
                            // Units:   Hz      us
 	// SCHED_TASK(update_state, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
-    SCHED_TASK(update_trajectory,       1,     50,   3),    /* TODO: determine correct scheduler parameters */
+   
 	// SCHED_TASK(lqt_controller, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
     SCHED_TASK(ahrs_update,           400,    400,   3),
     SCHED_TASK(read_radio,             50,    100,   6),
@@ -145,6 +145,10 @@ void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
     tasks = &scheduler_tasks[0];
     task_count = ARRAY_SIZE(scheduler_tasks);
     log_bit = MASK_LOG_PM;
+
+    // create files
+    FILE *controls_file = fopen("CONTROLS_LOG", "w");
+    fclose(controls_file);
 }
 
 #if HAL_QUADPLANE_ENABLED
@@ -153,56 +157,7 @@ constexpr int8_t Plane::_failsafe_priorities[7];
 constexpr int8_t Plane::_failsafe_priorities[6];
 #endif
 
-// void Plane::update_state() {
-
-// 	printf("Position: %.3f, %.3f, %.3f\n", currentState.position.x, currentState.position.y, currentState.position.z);
-// 	printf("Velocity: %.3f, %.3f, %.3f\n", currentState.velocity.x, currentState.velocity.y, currentState.velocity.z);
-// 	printf("Angles:   %.3f, %.3f, %.3f\n", currentState.roll*180/3.14, currentState.pitch*180/3.14, currentState.yaw*180/3.14);
-// 	printf("Omega:    %.3f, %.3f, %.3f\n\n", currentState.angularVelocity.x, currentState.angularVelocity.y, currentState.angularVelocity.z);
-// }
-
- void Plane::update_trajectory() {
-
-    //  printf("\nIn trajectory task\n");
-
  
-    //test parameters for init
-    warioInput_t testParameters;
-
-    testParameters.lat = 0.000; //GPS coordinates
-    testParameters.lon = 0.000; //GPS coordinates
-    testParameters.rad = 1000; //meters divided by 111111 to convert to deg (GPS)
-    testParameters.maxAlt = 683.2;  //meters
-    testParameters.minAlt = 0.0;  
-    testParameters.initialAngle = 0.00;
-    testParameters.targetVelocity = 20.0;
-
-    Vector3f windEstimate;
-    windEstimate.x = 0;
-    windEstimate.y = 0;
-    windEstimate.z = 0;
-
-    Vector3f pastWindEstimate;
-    pastWindEstimate.x = 0;
-    pastWindEstimate.y = 0;
-    pastWindEstimate.z = 0;
-
-    circleTrajectory.initCircle(testParameters);
-    printf("\nran initCircle()\n");
-    circleTrajectory.initSquircle(testParameters);
-    printf("\nran initSquircle()\n");
-    circleTrajectory.updatePath(testParameters, windEstimate);
-    printf("\nran updatePath()\n");
-    circleTrajectory.updateTransition(testParameters, windEstimate, pastWindEstimate); 
-    printf("\nran updateTransition()\n");
-
- }
-
-// void Plane::lqt_controller() {
-
-//     printf("\nIn lqt task\n");
-// }
-
 
 // update AHRS system
 void Plane::ahrs_update()
@@ -292,6 +247,19 @@ void Plane::update_logging1(void)
 
     if (should_log(MASK_LOG_ATTITUDE_MED))
         ahrs.Write_AOA_SSA();
+
+    // float amps, mah;
+    // bool ampsReceived = battery.current_amps(amps);
+    // bool mahReceived = battery.consumed_mah(mah);
+    // float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
+    // float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
+    // float rudder  = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
+    // float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
+    // if (ampsReceived && mahReceived) {
+        // FILE *controls_file = fopen("CONTROLS_LOG", "a");
+        // fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", throttle, aileron, elevator, rudder, amps, mah);
+        // fclose(controls_file);
+    // }
 }
 
 /*

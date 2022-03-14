@@ -748,6 +748,10 @@ public:
     bool navigation=true;
     bool controls=true;
 
+    uint32_t executionCounter = 0;
+
+    flightPhase_t nextWpPhase;
+
     void crashThePlane();
     void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
 
@@ -758,12 +762,9 @@ protected:
     aircraftState_t currentState;
     aircraftState_t desiredState;
 
-	uint16_t updateCounter;
-
     bool _enter() override;
 
 private:
 
     void printState();
-    void resetUpdateCounter();
 };

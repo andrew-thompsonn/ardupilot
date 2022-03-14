@@ -75,53 +75,32 @@ void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     for (int i = 0; i < 2; i++) {
         printf("LONGITUDINAL: Computed control input in index %d is %f\n",i,lonInput[i]);
     }
-
-    /*
-    // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]);
-    */
-
 }
 
 
 bool ModeRalphie::_enter() {
-    
-    /* Enters the mode, perform tasks that only need to happen on initialization */
-    // trajectory.init();
-    printState();
 
-    controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
-    controllerLQT(GAINS_LAT_CIRCLE,GAINS_LON_CIRCLE);
+    /* Initialize the trajectory based on the takeoff location */ 
+    trajectory.init(plane.home);
 
-    plane.next_WP_loc.alt = plane.current_loc.alt;
-	updateCounter = 0;
+    /* Get the first waypoint of the trajectory */
+    plane.prev_WP_loc = plane.next_WP_loc;
+    trajectory.getFirstWaypoint(plane.next_WP_loc);
 
+    /* TODO: what conditions should this fail? */
     return true;
 }
 
 
 void ModeRalphie::update() {
     
-    /* Called at 400 Hz from scheduler, other miscellaneous items can happen here */
-
+    /* Retrieve the current state of the aircraft */
     currentState.roll = plane.ahrs.get_roll();
     currentState.pitch = plane.ahrs.get_pitch();
     currentState.yaw = plane.ahrs.get_yaw();
-
     plane.ahrs.get_relative_position_NED_origin(currentState.position);
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
-
-	if (UPDATE_FREQUENCY/4 <= updateCounter++) {
-
-		resetUpdateCounter();
-        Vector3f windEstimate = plane.ahrs.wind_estimate();
-        printf("Updating wind average with vector [%.3f, %.3f, %.3f]\n", windEstimate.x, windEstimate.y, windEstimate.z);
-        trajectory.updateAverageWind(windEstimate);
-	}
 }
 
 
@@ -131,15 +110,31 @@ void ModeRalphie::navigate() {
     if (navigation == INACTIVE)
         return;
     
-    //trajectory.update();
+    /* Add to the wind rolling average */
+    Vector3f windEstimate = plane.ahrs.wind_estimate();
+    trajectory.updateAverageWind(windEstimate);
 
-    plane.nav_roll_cd  = plane.roll_limit_cd / 3;
-    plane.update_load_factor();
+    /* Update the trajectory */
+    trajectory.update();
+
+    /* Update the active waypoint */
+    nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
+
+    /* Update navigation controller to track trajectory */
+    plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
+    plane.calc_nav_roll();
     plane.calc_nav_pitch();
     plane.calc_throttle();
 
-    /* Update plane.next_WP_loc, plane.current_loc, plane.prev_WP_loc etc */
-    //printf("RALPHIE NAVIGATING\n");
+    if (executionCounter++ % 10 == 0) {
+        trajectory.printState();
+        printf("CURRENT POSITION: %.3f, %.3f, %.3f\n", (plane.current_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.current_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.current_loc.alt/100.0);
+        printf("TRACKING POSITION: %.3f, %.3f, %.3f\n", (plane.next_WP_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.next_WP_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.next_WP_loc.alt/100.0);
+        printf("WIND ESTIMATE: %.3f\n", trajectory.currentWindAngleEstimate*RAD_TO_DEG);
+        float yaw = plane.ahrs.get_yaw();
+        printf("HEADING: %.3f\n\n", yaw);
+    }
+
 }
 
 
@@ -165,8 +160,4 @@ void ModeRalphie::printState() {
 }
 
 
-void ModeRalphie::resetUpdateCounter() {
-
-    updateCounter = 0;
-}
 
