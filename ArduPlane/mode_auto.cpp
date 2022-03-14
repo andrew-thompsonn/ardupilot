@@ -65,7 +65,11 @@ void ModeAuto::update()
     }
 
     uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
-    if (hal.util->persistent_data.waypoint_num == 10) plane.lqtID = Plane::LQT_STRAIGHT;
+    if (hal.util->persistent_data.waypoint_num == 10) {
+        printf("Changing lqtID from: %d ",plane.lqtID);
+        plane.lqtID = Plane::LQT_STRAIGHT;
+        printf("to %d\n",plane.lqtID);
+    }
 
 #if HAL_QUADPLANE_ENABLED
     if (plane.quadplane.in_vtol_auto()) {
@@ -116,6 +120,7 @@ void ModeAuto::update()
         currentState.angularVelocity = plane.ahrs.get_gyro();
 
         if (plane.lqtID == Plane::LQT_STRAIGHT){
+            //printf("Using Straight line gains\n");
             controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
         }
         else{
@@ -163,6 +168,9 @@ void ModeAuto::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     const AP_Navigation *nav_controller = plane.nav_controller;
     float latStateDesired[6] = {currentState.velocity.y,0,0,float(plane.nav_roll_cd * 0.01),float(nav_controller->nav_bearing_cd() * 0.01),float(plane.next_WP_loc.lat*LATLON_TO_M - plane.home.lat*LATLON_TO_M)};
     float lonStateDesired[6] = {0,0,0,float(plane.nav_pitch_cd * 0.01),float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M),float(plane.next_WP_loc.alt*LATLON_TO_M - plane.home.alt*LATLON_TO_M)};
+
+    // CHECK TO MAKE SURE UNITS OF DESIRED AND ACTUAL ARE THE SAME
+    printf("difference value:\nlat = %f\nlon = %f\nalt = %f\n",float(plane.next_WP_loc.lat*LATLON_TO_M - plane.home.lat*LATLON_TO_M),float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M),float(plane.next_WP_loc.alt*LATLON_TO_M - plane.home.alt*LATLON_TO_M));
 
     for (int i = 0; i < 6; i++) {
         latError[i] = latState[i] - latStateDesired[i];
