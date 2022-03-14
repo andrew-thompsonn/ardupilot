@@ -79,29 +79,28 @@ void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
 
 
 bool ModeRalphie::_enter() {
-    
+
+    /* Initialize the trajectory based on the takeoff location */ 
     trajectory.init(plane.home);
+
+    /* Get the first waypoint of the trajectory */
     plane.prev_WP_loc = plane.next_WP_loc;
     trajectory.getFirstWaypoint(plane.next_WP_loc);
 
+    /* TODO: what conditions should this fail? */
     return true;
 }
 
 
 void ModeRalphie::update() {
     
-    /* Called at 400 Hz from scheduler, other miscellaneous items can happen here */
-
+    /* Retrieve the current state of the aircraft */
     currentState.roll = plane.ahrs.get_roll();
     currentState.pitch = plane.ahrs.get_pitch();
     currentState.yaw = plane.ahrs.get_yaw();
-
     plane.ahrs.get_relative_position_NED_origin(currentState.position);
     plane.ahrs.get_velocity_NED(currentState.velocity);
     currentState.angularVelocity = plane.ahrs.get_gyro();
-
-
-    //const float aileron = rollController.get_rate_out(nav_scripting.roll_rate_dps, speed_scaler);
 }
 
 
@@ -161,8 +160,4 @@ void ModeRalphie::printState() {
 }
 
 
-void ModeRalphie::resetUpdateCounter() {
-
-    updateCounter = 0;
-}
 

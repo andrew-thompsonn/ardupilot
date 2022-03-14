@@ -762,12 +762,9 @@ protected:
     aircraftState_t currentState;
     aircraftState_t desiredState;
 
-	uint16_t updateCounter;
-
     bool _enter() override;
 
 private:
 
     void printState();
-    void resetUpdateCounter();
 };

@@ -414,13 +414,12 @@ void RalphieTrajectory::averageWind() {
     /* Use the sum to compute the average vector and angle */
     currentWindEstimate = sum / WIND_BUFFER_SIZE;
     currentWindAngleEstimate = atanF(currentWindEstimate.y / currentWindEstimate.x);
-
-    // printf("Estimated wind direction: %.3f\n", currentWindAngleEstimate);
 }
 
 
 void RalphieTrajectory::resetWindAverage() {
 
+    /* Clear the wind buffer */
     windSamples = 0;
 }
 
@@ -428,8 +427,10 @@ void RalphieTrajectory::resetWindAverage() {
 
 void RalphieTrajectory::convertWaypointsToLocations(Location locations[], aircraftState_t states[]) {
 
+    /* Convert aircraft states to locations */
     for (uint8_t index = 0; index < WARIO_TRAJECTORY_SIZE; index++) {
 
+        /* Altitude is measured in centimeters (hence the multiplier of 100) */
         locations[index].alt = TrajectoryHome.alt + (int32_t)states[index].position.z * 100;
         locations[index].lat = ((TrajectoryHome.lat * LATLON_TO_M) + states[index].position.x) * LATLON_TO_M_INV;
         locations[index].lng = ((TrajectoryHome.lng * LATLON_TO_M) + states[index].position.y) * LATLON_TO_M_INV;
@@ -439,12 +440,8 @@ void RalphieTrajectory::convertWaypointsToLocations(Location locations[], aircra
 
 void RalphieTrajectory::update() {
 
-    /* If we are already transitioning, we don't want to touch anything */ 
-    if (state == STATE_TRANSITIONING)
-        return;
-
-    /* If we are circling, just let the wind averaging fill up */
-    if (state == STATE_CIRCLING)
+    /* If we are already transitioning or circling, we don't want to touch anything */ 
+    if ( (STATE_TRANSITIONING == state) || (STATE_CIRCLING == state) )
         return;
 
     /* Check if we need to cancel a previous transition */
@@ -472,15 +469,19 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
         /* WARIO State Machine */
         switch (state) {
 
+            /* Aircraft is in circling pattern */
             case STATE_CIRCLING:
 
+                /* If we have reaced the end of the circle buffer */
                 if (currentWaypointIndex == WARIO_TRAJECTORY_SIZE) {
 
+                    /* Document the current wind estimate, update the trajectory */
+                    startAngle = finalAngle;
                     finalAngle = currentWindAngleEstimate;
                     updateTransition();
                     updatePath();
-                    startAngle = finalAngle;
-                    
+
+                    /* Reset the index, copy the first waypoint from the transition array */ 
                     currentWaypointIndex = 0;
                     next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
                     state = STATE_TRANSITIONING;
@@ -492,7 +493,8 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 next_WP_loc = circleWaypointsLoc[currentWaypointIndex];
                 phase = FLIGHT_PHASE_CIRCLE;
                 break;
-                
+
+            /* Aircraft is in squircle/racetrack pattern */ 
             case STATE_NORMAL:  
 
                 /* If the we have reached the end of a squircle and need a trajectory */ 
@@ -503,6 +505,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                     startAngle = finalAngle;
                     currentWaypointIndex = 0;
 
+                    /* Copy the first waypoint from the transition array */
                     next_WP_loc = waypointsTransitionLoc[currentWaypointIndex];
                     needToTransition = false;
                     state = STATE_TRANSITIONING;
@@ -519,11 +522,13 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 phase = phases[currentWaypointIndex];
                 break;
 
+            /* Aircraft is transitioning between squircles/racetracks */
             case STATE_TRANSITIONING:
 
                 /* If we have reached the end of a transition path */
                 if (currentWaypointIndex == transitionPathSize) {
 
+                    /* Reset the index, and copy the first waypoint from the squircle array */
                     currentWaypointIndex = 0;
                     next_WP_loc = waypointsRotatedLoc[currentWaypointIndex];
                     state = STATE_NORMAL;
@@ -538,13 +543,13 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                 break; 
 
             default:
-                phase = FLIGHT_PHASE_STRAIGHT; // TODO: wtf should be returned here
                 /* Something went wrong */
+                phase = FLIGHT_PHASE_STRAIGHT; // TODO: wtf should be returned here
                 break;
         }
 
+        /* Increment the index of the current waypoint, return the flight phase of waypoint */
         currentWaypointIndex++;
-
         return phase;
     }
 
@@ -554,7 +559,8 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
     else if (state == STATE_NORMAL)
         return phases[currentWaypointIndex];
     else
-        return FLIGHT_PHASE_CIRCLE; 
+        return FLIGHT_PHASE_CIRCLE;
+    return phases[currentWaypointIndex];
 }
 
 
