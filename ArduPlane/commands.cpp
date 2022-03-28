@@ -9,7 +9,7 @@
  */
 void Plane::set_next_WP(const struct Location &loc)
 {
-    printf("in set_next_WP func\n");
+    //printf("in set_next_WP func\n");
     if (auto_state.next_wp_crosstrack) {
         // copy the current WP into the OldWP slot
         prev_WP_loc = next_WP_loc;

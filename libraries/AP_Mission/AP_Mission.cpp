@@ -206,7 +206,7 @@ bool AP_Mission::continue_after_land_check_for_takeoff()
 /// start_or_resume - if MIS_AUTORESTART=0 this will call resume(), otherwise it will call start()
 void AP_Mission::start_or_resume()
 {
-    printf("in start or resume\n");
+    //printf("in start or resume\n");
     if (_restart == 1 && !_force_resume) {
         start();
     } else {
