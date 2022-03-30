@@ -165,6 +165,10 @@ class ModeAuto : public Mode
 {
 public:
 
+    float WP_ten_pitch = 0;
+
+    bool flag_bounds = true;
+
     float GAINS_LAT_CIRCLE[2][6] = {
     {0.2665,0.7856,2.1047,5.1533,6.5774,0.0795},
     {0.2187,0.4400,1.4448,3.1420,4.2834,0.0507}

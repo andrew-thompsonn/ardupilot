@@ -55,6 +55,20 @@ void ModeAuto::_exit()
 
 void ModeAuto::update()
 {
+
+    /*printf("throttle auto: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_throttle));
+    printf("aileron auto: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_aileron)/100);
+    printf("rudder auto: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_rudder)/100);
+    printf("elevator auto: %f\n\n",SRV_Channels::get_output_scaled(SRV_Channel::k_elevator)/100);*/
+
+    currentState.roll = plane.ahrs.get_roll();
+    currentState.pitch = plane.ahrs.get_pitch();
+    currentState.yaw = plane.ahrs.get_yaw();
+
+    plane.ahrs.get_relative_position_NED_origin(currentState.position);
+    plane.ahrs.get_velocity_NED(currentState.velocity);
+    currentState.angularVelocity = plane.ahrs.get_gyro();
+
     //printf("Waypoint num: %d \n",hal.util->persistent_data.waypoint_num);
     if (plane.mission.state() != AP_Mission::MISSION_RUNNING) {
         //printf("a\n");
@@ -66,11 +80,12 @@ void ModeAuto::update()
     }
 
     uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
-    if (hal.util->persistent_data.waypoint_num == 10) {
+    /*if (hal.util->persistent_data.waypoint_num == 12) {
         //printf("Changing lqtID from: %d ",plane.lqtID);
         plane.lqtID = Plane::LQT_STRAIGHT;
+        WP_ten_pitch = float(plane.nav_pitch_cd * 0.01);
         //printf("to %d\n",plane.lqtID);
-    }
+    }*/
 
 #if HAL_QUADPLANE_ENABLED
     if (plane.quadplane.in_vtol_auto()) {
@@ -113,18 +128,12 @@ void ModeAuto::update()
     } else if (plane.lqtID != Plane::LQT_DISABLED) {
         //printf("IN fake lqt mode\n");
         //printf("Current lqtID value is %d\n",plane.lqtID);
-        currentState.roll = plane.ahrs.get_roll();
-        currentState.pitch = plane.ahrs.get_pitch();
-        currentState.yaw = plane.ahrs.get_yaw();
-
-        plane.ahrs.get_relative_position_NED_origin(currentState.position);
-        plane.ahrs.get_velocity_NED(currentState.velocity);
-        currentState.angularVelocity = plane.ahrs.get_gyro();
 
         if (plane.lqtID == Plane::LQT_STRAIGHT){
             //printf("Using Straight line gains\n");
             controllerLQT(GAINS_LAT_LINE,GAINS_LON_LINE);
-            plane.calc_nav_roll(); plane.calc_nav_pitch(); plane.calc_throttle();
+            plane.calc_nav_roll();
+            //plane.calc_nav_roll(); plane.calc_nav_pitch(); plane.calc_throttle();
             if (hal.util->persistent_data.waypoint_num == 45 || hal.util->persistent_data.waypoint_num == 93){
                 //plane.lqtID = Plane::LQT_CURVED;
             } 
@@ -149,6 +158,21 @@ void ModeAuto::update()
         plane.calc_nav_pitch();
         plane.calc_throttle();
     }
+
+    if (currentState.position.z > -50 || currentState.position.z < -300){
+        plane.lqtID = Plane::LQT_DISABLED;
+        printf("LQT is DISABLED\n");
+        flag_bounds = false;
+        if(currentState.position.z > -250){
+            flag_bounds = true;
+        }
+    }
+    else if (currentState.position.z < -50 && flag_bounds){
+        plane.lqtID = Plane::LQT_STRAIGHT;
+        WP_ten_pitch = float(plane.nav_pitch_cd * 0.01);
+        printf("LQT is ENABLED\n");
+    }
+
 }
 
 void ModeAuto::navigate()
@@ -166,6 +190,7 @@ void ModeAuto::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     float lonError[6];
 
     const AP_Navigation *nav_controller = plane.nav_controller;
+    //const AP_TECS *tecs_controller = plane.AP_TECS;
 
     // declaring the actual state of the aircraft // units -> meters, m/s, deg, deg/s
     //v p r phi psi y
@@ -181,17 +206,19 @@ void ModeAuto::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     //can use AP_TECS and AP_L1_Control functions to determine desired roll and pitch angles
     //can offset using plane.home.lat*LATLON_TO_M
     //lat is x component, lng is y component
-    float latStateDesired[6] = {currentState.velocity.y,0,0,float(plane.nav_roll_cd * 0.01),float(nav_controller->nav_bearing_cd() * 0.01),float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M)};
-    float lonStateDesired[6] = {currentState.velocity.x,currentState.velocity.z,0,float(plane.nav_pitch_cd * 0.01),float(plane.next_WP_loc.lat*LATLON_TO_M - plane.home.lat*LATLON_TO_M),float(plane.next_WP_loc.alt*LATLON_TO_M - plane.home.alt*LATLON_TO_M)};
-
+    //float latStateDesired[6] = {currentState.velocity.y,0,0,float(plane.nav_roll_cd * 0.01),float(nav_controller->nav_bearing_cd() * 0.01),float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M)};
+    //float lonStateDesired[6] = {currentState.velocity.x,currentState.velocity.z,0,float(plane.nav_pitch_cd * 0.01),float(plane.next_WP_loc.lat*LATLON_TO_M - plane.home.lat*LATLON_TO_M),float(plane.next_WP_loc.alt*LATLON_TO_M - plane.home.alt*LATLON_TO_M)};
+    float latStateDesired[6] = {22,0,0,0,float(nav_controller->nav_bearing_cd() * 0.01),float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M)};
+    float lonStateDesired[6] = {0,0,0,WP_ten_pitch,float(plane.next_WP_loc.lat*LATLON_TO_M - plane.home.lat*LATLON_TO_M),-float(plane.next_WP_loc.alt - plane.home.alt)/100};
+    //printf("wanted: %f, actual: %f\n\n",-float(plane.next_WP_loc.alt - plane.home.alt)/100,currentState.position.z);
     //printVector(latStateDesired); printVector(lonStateDesired); printf("\n");
 
     // CHECK TO MAKE SURE UNITS OF DESIRED AND ACTUAL ARE THE SAME
     //printf("difference value:\nlat = %f\nlon = %f\nalt = %f\n",float(plane.next_WP_loc.lat*LATLON_TO_M - plane.home.lat*LATLON_TO_M),float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M),float(plane.next_WP_loc.alt*LATLON_TO_M - plane.home.alt*LATLON_TO_M));
 
     for (int i = 0; i < 6; i++) {
-        latError[i] = latState[i] - latStateDesired[i];
-        lonError[i] = lonState[i] - lonStateDesired[i];
+        latError[i] = latStateDesired[i] - latState[i];
+        lonError[i] = lonStateDesired[i] - lonState[i];
         //latError[i] = 0; lonError[i] = 0;
     }
     lonError[5] = 0;
@@ -208,17 +235,28 @@ void ModeAuto::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
     /*for (int i = 0; i < 2; i++) {
         printf("LATERAL: Computed control input in index %d is %f\n",i,latInput[i]);
     }
-    printf("\n");
     for (int i = 0; i < 2; i++) {
         printf("LONGITUDINAL: Computed control input in index %d is %f\n",i,lonInput[i]);
-    }*/
+    }
+    printf("\n");*/
 
     // can set out own min, max, and trim values for our servos, could be useful in limitting the LQT
     //look into set_output_scaled to see what units should be passed into the channels
+
+    //printf("throttle: %f\n",lonInput[1]*100.0f);
+    //printf("elevator: %f\n",lonInput[0]);
+    //printf("airleron: %f\n",latInput[0]);
+    //printf("rudder: %f\n",latInput[1]);
+    lonInput[1] = constrain_float(lonInput[1]*100.0f,0,100);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
+    //SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, tecs_controller->get_throttle_demand()); //--> cant use get_throttle_demand() to determine the desired throttle, same function is used in calc_throttle()
+    //printf("throttle: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_throttle));
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, latInput[0]);
+    //printf("aileron: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_aileron)/100);
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, latInput[1]);
+    //printf("rudder: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_rudder)/100);
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, lonInput[0]);
+    //printf("elevator: %f\n\n",SRV_Channels::get_output_scaled(SRV_Channel::k_elevator)/100);
 
     //printf("Actual y: %.3f\nDesired y: %.3f\n",currentState.position.y,float(plane.next_WP_loc.lng*LATLON_TO_M - plane.home.lng*LATLON_TO_M));
     //printf("Error between them: %.3f\n\n",latError[5]);
