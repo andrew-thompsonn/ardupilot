@@ -52,6 +52,9 @@ SCHED_TASK_CLASS arguments:
  */
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
                            // Units:   Hz      us
+	// SCHED_TASK(update_state, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
+   
+	// SCHED_TASK(lqt_controller, 		    1,     50,   3),    /* TODO: determine correct scheduler parameters */
     SCHED_TASK(ahrs_update,           400,    400,   3),
     SCHED_TASK(read_radio,             50,    100,   6),
     SCHED_TASK(check_short_failsafe,   50,    100,   9),
@@ -142,6 +145,10 @@ void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
     tasks = &scheduler_tasks[0];
     task_count = ARRAY_SIZE(scheduler_tasks);
     log_bit = MASK_LOG_PM;
+
+    // create files
+    FILE *controls_file = fopen("CONTROLS_LOG", "w");
+    fclose(controls_file);
 }
 
 #if HAL_QUADPLANE_ENABLED
@@ -150,6 +157,7 @@ constexpr int8_t Plane::_failsafe_priorities[7];
 constexpr int8_t Plane::_failsafe_priorities[6];
 #endif
 
+ 
 
 // update AHRS system
 void Plane::ahrs_update()
@@ -239,6 +247,19 @@ void Plane::update_logging1(void)
 
     if (should_log(MASK_LOG_ATTITUDE_MED))
         ahrs.Write_AOA_SSA();
+
+    // float amps, mah;
+    // bool ampsReceived = battery.current_amps(amps);
+    // bool mahReceived = battery.consumed_mah(mah);
+    // float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
+    // float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
+    // float rudder  = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
+    // float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
+    // if (ampsReceived && mahReceived) {
+        // FILE *controls_file = fopen("CONTROLS_LOG", "a");
+        // fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", throttle, aileron, elevator, rudder, amps, mah);
+        // fclose(controls_file);
+    // }
 }
 
 /*

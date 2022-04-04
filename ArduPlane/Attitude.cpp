@@ -536,8 +536,8 @@ void Plane::stabilize()
         }
 
 
-    } else if (control_mode == &mode_ralphie && mode_ralphie.controls == ACTIVE) {
-        plane.control_mode->run();
+    // } else if (control_mode == &mode_ralphie && mode_ralphie.controls == ACTIVE) {
+    //     plane.control_mode->run();
 
     } else {
         if (allow_stick_mixing && g.stick_mixing == StickMixing::FBW && control_mode != &mode_stabilize) {

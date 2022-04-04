@@ -773,7 +773,7 @@ protected:
 
 #define ACTIVE      1
 #define INACTIVE    0
-
+#define UPDATE_FREQUENCY 	400
 
 class ModeRalphie: public Mode {
 
@@ -786,12 +786,17 @@ public:
     bool does_auto_throttle()   const override { return true; }
     bool does_auto_navigation() const override { return true; }
 
+
     void run()      override;
     void update()   override;
     void navigate() override;
 
     bool navigation=true;
     bool controls=true;
+
+    uint32_t executionCounter = 0;
+
+    flightPhase_t nextWpPhase;
 
     void crashThePlane();
     void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
