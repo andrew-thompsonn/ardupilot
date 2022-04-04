@@ -150,8 +150,8 @@ void ModeAuto::update()
         //printf("h\n");
         // we are doing normal AUTO flight, the special cases
         // are for takeoff and landing
-        printf("\n\nSWITCHING TO RALPHIE\n\n");
-        plane.set_mode(plane.mode_ralphie, ModeReason::INITIALISED);
+        //printf("\n\nSWITCHING TO RALPHIE\n\n");
+        //plane.set_mode(plane.mode_ralphie, ModeReason::INITIALISED);
         if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
             //printf("i\n");
             plane.steer_state.hold_course_cd = -1;
@@ -161,11 +161,28 @@ void ModeAuto::update()
         plane.calc_throttle();
     }
 
-    if (currentState.position.z > -50 || currentState.position.z < -300){
+    if (plane.lqtID == Plane::LQT_DISABLED)
+    {
+        printf("LQT is DISABLED\n");
+        if(currentState.position.z < -60 && currentState.position.z > -240){
+            plane.lqtID = Plane::LQT_STRAIGHT;
+        }
+    }
+    else{
+        printf("LQT is ENABLED\n");
+        WP_ten_pitch = float(plane.nav_pitch_cd * 0.01);
+        if(currentState.position.z > -49 || currentState.position.z < -251){
+            plane.lqtID = Plane::LQT_DISABLED;
+        }
+    }
+
+
+
+    /*if (currentState.position.z > -50 || ){
         plane.lqtID = Plane::LQT_DISABLED;
         printf("LQT is DISABLED\n");
-        flag_bounds = false;
-        if(currentState.position.z > -250){
+        //flag_bounds = false;
+        /*if(currentState.position.z > -250){
             flag_bounds = true;
         }
     }
@@ -173,7 +190,7 @@ void ModeAuto::update()
         plane.lqtID = Plane::LQT_STRAIGHT;
         WP_ten_pitch = float(plane.nav_pitch_cd * 0.01);
         printf("LQT is ENABLED\n");
-    }
+    }*/
 
 }
 
