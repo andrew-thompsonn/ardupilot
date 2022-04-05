@@ -755,9 +755,9 @@ public:
     void crashThePlane();
     void controllerLQT(float gainsLat[][6], float gainsLon[][6]);
 
+    RalphieTrajectory trajectory;
 protected:
     
-    RalphieTrajectory trajectory;
 
     aircraftState_t currentState;
     aircraftState_t desiredState;

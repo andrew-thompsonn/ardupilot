@@ -39,6 +39,7 @@ void ModeRalphie::crashThePlane() {
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 100.0);
 }
 
+
 void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6]) {
 
     // Function takes in the gain values based on case in switch statement
@@ -132,7 +133,8 @@ void ModeRalphie::navigate() {
         printf("TRACKING POSITION: %.3f, %.3f, %.3f\n", (plane.next_WP_loc.lat - plane.home.lat)*LATLON_TO_M, (plane.next_WP_loc.lng - plane.home.lng)*LATLON_TO_M, (double)plane.next_WP_loc.alt/100.0);
         printf("WIND ESTIMATE: %.3f\n", trajectory.currentWindAngleEstimate*RAD_TO_DEG);
         float yaw = plane.ahrs.get_yaw();
-        printf("HEADING: %.3f\n\n", yaw);
+        printf("TRAJECTORY PHASE: %d\n", nextWpPhase);
+        printf("HEADING: %.3f\n\n", yaw*RAD_TO_DEG);
     }
 
 }

@@ -147,8 +147,8 @@ void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
     log_bit = MASK_LOG_PM;
 
     // create files
-    FILE *controls_file = fopen("CONTROLS_LOG", "w");
-    fclose(controls_file);
+    // FILE *controls_file = fopen("CONTROLS_LOG", "w");
+    // fclose(controls_file);
 }
 
 #if HAL_QUADPLANE_ENABLED
@@ -248,6 +248,7 @@ void Plane::update_logging1(void)
     if (should_log(MASK_LOG_ATTITUDE_MED))
         ahrs.Write_AOA_SSA();
 
+    
     // float amps, mah;
     // bool ampsReceived = battery.current_amps(amps);
     // bool mahReceived = battery.consumed_mah(mah);
@@ -256,9 +257,10 @@ void Plane::update_logging1(void)
     // float rudder  = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
     // float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
     // if (ampsReceived && mahReceived) {
-        // FILE *controls_file = fopen("CONTROLS_LOG", "a");
-        // fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", throttle, aileron, elevator, rudder, amps, mah);
-        // fclose(controls_file);
+    //     FILE *controls_file = fopen("CONTROLS_LOG", "a");
+    //     if (!controls_file) printf("UNABLE TO LOG \n");
+    //     fprintf(controls_file, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %d\n", throttle, aileron, elevator, rudder, amps, mah, mode_ralphie.trajectory.state);
+    //     fclose(controls_file);
     // }
 }
 
