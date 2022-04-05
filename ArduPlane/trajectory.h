@@ -66,6 +66,7 @@ class RalphieTrajectory {
      */
     Vector3f currentWindEstimate;
 
+
     /**
      *  The current estimation of wind direction 
      * 
@@ -141,13 +142,6 @@ class RalphieTrajectory {
      * 
      */
     void averageWind();
-
-    /**
-     * @brief array of location waypoints for integration with auto controller. 
-     * 
-     */
-
-    flightPhase_t phases[WARIO_TRAJECTORY_SIZE];
 
 
     /**

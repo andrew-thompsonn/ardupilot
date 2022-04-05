@@ -413,7 +413,7 @@ void RalphieTrajectory::averageWind() {
 
     /* Use the sum to compute the average vector and angle */
     currentWindEstimate = sum / WIND_BUFFER_SIZE;
-    currentWindAngleEstimate = atanF(currentWindEstimate.y / currentWindEstimate.x);
+    currentWindAngleEstimate = atan2F(-currentWindEstimate.x, -currentWindEstimate.y);
 }
 
 
@@ -519,7 +519,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
 
                 /* Copy the next waypoint in the SQUIRCLE to the next_WP_loc */ 
                 next_WP_loc = waypointsRotatedLoc[currentWaypointIndex];
-                phase = phases[currentWaypointIndex];
+                phase = waypointsSquircle[currentWaypointIndex].phase;  
                 break;
 
             /* Aircraft is transitioning between squircles/racetracks */
@@ -532,7 +532,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
                     currentWaypointIndex = 0;
                     next_WP_loc = waypointsRotatedLoc[currentWaypointIndex];
                     state = STATE_NORMAL;
-                    phase = phases[currentWaypointIndex];
+                    phase = waypointsRotated[currentWaypointIndex].phase;
                     currentPathDirection = finalAngle;
                     break;
                 }
@@ -557,10 +557,9 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
     if (state == STATE_CIRCLING)
         return FLIGHT_PHASE_CIRCLE;
     else if (state == STATE_NORMAL)
-        return phases[currentWaypointIndex];
+        return waypointsSquircle[currentWaypointIndex].phase;
     else
         return FLIGHT_PHASE_CIRCLE;
-    return phases[currentWaypointIndex];
 }
 
 
@@ -580,3 +579,4 @@ void RalphieTrajectory::printState() {
             break;
     }
 }
+
