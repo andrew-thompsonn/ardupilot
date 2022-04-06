@@ -746,11 +746,13 @@ public:
     void navigate() override;
 
     bool navigation=true;
-    bool controls=true;
-
+    bool controls=false;
+    float WP_ten_pitch = 0;
     uint32_t executionCounter = 0;
 
     flightPhase_t nextWpPhase;
+
+    bool readyForLQT=false;
 
     void crashThePlane();
     void controllerLQT(float gainsLat[][6], float gainsLon[][6]);

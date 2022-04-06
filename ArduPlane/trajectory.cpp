@@ -9,7 +9,7 @@ void RalphieTrajectory::init(Location home) {
     transitionPathSize = 0;
     needToTransition = false;
     transitioning = false;
-    parameters.rad = 500;
+    parameters.rad = 750;
     parameters.maxAlt = 100;
     parameters.minAlt = 100; 
     parameters.initialAngle = 0;
