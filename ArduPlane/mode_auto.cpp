@@ -161,17 +161,19 @@ void ModeAuto::update()
         plane.calc_throttle();
     }
 
+    float alt = (float)plane.current_loc.alt /100.0;
+
     if (plane.lqtID == Plane::LQT_DISABLED)
     {
-        printf("LQT is DISABLED\n");
-        if(currentState.position.z < -60 && currentState.position.z > -240){
+        printf("LQT disabled\n");
+        if (alt > (0.01)*plane.next_WP_loc.alt - 5   &&  alt < (0.01)*plane.next_WP_loc.alt + 5) {
             plane.lqtID = Plane::LQT_STRAIGHT;
         }
     }
-    else{
-        printf("LQT is ENABLED\n");
+    else {
+        printf("LQT enabled\n");
         WP_ten_pitch = float(plane.nav_pitch_cd * 0.01);
-        if(currentState.position.z > -49 || currentState.position.z < -251){
+        if (alt < (0.01)*plane.next_WP_loc.alt - 50  ||  alt > (0.01)*plane.next_WP_loc.alt + 50) {
             plane.lqtID = Plane::LQT_DISABLED;
         }
     }
