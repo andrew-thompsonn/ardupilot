@@ -106,7 +106,7 @@ void ModeRalphie::controllerLQT(float gainsLat[][6], float gainsLon[][6])
     // printf("elevator: %f\n",lonInput[0]);
     // printf("airleron: %f\n",latInput[0]);
     // printf("rudder: %f\n",latInput[1]);
-    lonInput[1] = constrain_float(lonInput[1] * 100.0f, 0, 75);
+    lonInput[1] = constrain_float(lonInput[1] * 100.0f, 0, 100);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, lonInput[1]);
     // SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, tecs_controller->get_throttle_demand()); //--> cant use get_throttle_demand() to determine the desired throttle, same function is used in calc_throttle()
     // printf("throttle: %f\n",SRV_Channels::get_output_scaled(SRV_Channel::k_throttle));
@@ -146,6 +146,12 @@ void ModeRalphie::update() {
     currentState.angularVelocity = plane.ahrs.get_gyro();
     
     float alt = (float)plane.current_loc.alt /100.0;
+    
+    /* Update the active waypoint */
+    nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
+
+    /* Update navigation controller to track trajectory */
+    plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
 
     if (!readyForLQT) {
         if (nextWpPhase == FLIGHT_PHASE_STRAIGHT) {
@@ -154,7 +160,7 @@ void ModeRalphie::update() {
         return;
     }
 
-    if (nextWpPhase == FLIGHT_PHASE_TRANSITION) {
+    if (nextWpPhase != FLIGHT_PHASE_STRAIGHT) {
         controls = false;
         return;
     }
@@ -187,11 +193,6 @@ void ModeRalphie::navigate() {
     /* Update the trajectory */
     trajectory.update();
 
-    /* Update the active waypoint */
-    nextWpPhase = trajectory.fillNextWaypoint(plane.prev_WP_loc, plane.current_loc, plane.next_WP_loc);
-
-    /* Update navigation controller to track trajectory */
-    plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
 
     if (!controls) {
         plane.calc_nav_roll();
