@@ -57,7 +57,7 @@ class RalphieTrajectory {
     warioInput_t parameters;
 
     //set initial location home
-    Location TrajectoryHome;
+    Location trajectoryHome;
 
     /**
      *  The current estimation of wind vector
@@ -202,7 +202,12 @@ class RalphieTrajectory {
     void printState();
     void getFirstWaypoint(Location &location);
 
+    void setPointOfInterest(int32_t latitude, int32_t longitude);
+
     warioEngineState_t state;
+
+    int32_t latOffset;
+    int32_t lngOffset;
 
 
 
