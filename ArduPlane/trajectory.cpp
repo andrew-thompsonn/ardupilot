@@ -363,7 +363,6 @@ void RalphieTrajectory::updatePath() {
     convertWaypointsToLocations(waypointsRotatedLoc, waypointsRotated);
 }
 
-
 void RalphieTrajectory::updateAverageWind(Vector3f measurement) {
 
     /* If we haven't filled the buffer with wind samples yet, fill the buffer */
@@ -382,7 +381,6 @@ void RalphieTrajectory::updateAverageWind(Vector3f measurement) {
     averageWind(); 
 }
 
-
 void RalphieTrajectory::averageWind() {
 
     /* Sum every vector in the buffer */
@@ -395,14 +393,11 @@ void RalphieTrajectory::averageWind() {
     currentWindAngleEstimate = atan2F(-currentWindEstimate.x, -currentWindEstimate.y);
 }
 
-
 void RalphieTrajectory::resetWindAverage() {
 
     /* Clear the wind buffer */
     windSamples = 0;
 }
-
-
 
 void RalphieTrajectory::convertWaypointsToLocations(Location locations[], aircraftState_t states[]) {
 
@@ -415,7 +410,6 @@ void RalphieTrajectory::convertWaypointsToLocations(Location locations[], aircra
         locations[index].lng = ((trajectoryHome.lng * LATLON_TO_M) + states[index].position.y) * LATLON_TO_M_INV;
     }
 }
-
 
 void RalphieTrajectory::update() {
 
@@ -435,7 +429,6 @@ void RalphieTrajectory::update() {
         needToTransition = true;
     }
 }
-
 
 flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Location current_loc, Location &next_WP_loc) {
 
@@ -525,8 +518,11 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
         /* Increment the index of the current waypoint, return the flight phase of waypoint */
         currentWaypointIndex++;
 
+        /* Add the offset to the mission-centered trajectory */
         next_WP_loc.lat += latOffset;
         next_WP_loc.lng += lngOffset;
+
+        /* Return the current phase of flight */
         return phase;
     }
 
@@ -542,6 +538,7 @@ flightPhase_t RalphieTrajectory::fillNextWaypoint(Location &prev_WP_loc, Locatio
 
 void RalphieTrajectory::setPointOfInterest(int32_t latitude, int32_t longitude) {
 
+    /* Compute the offset from the home-centered trajectory to the mission center */
     latOffset = latitude - trajectoryHome.lat;
     lngOffset = longitude - trajectoryHome.lng;
 }
