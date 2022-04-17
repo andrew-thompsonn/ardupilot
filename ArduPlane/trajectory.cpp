@@ -18,7 +18,7 @@ void RalphieTrajectory::init(Location home) {
     state = STATE_CIRCLING;
 
     /* Flight parameters */
-    parameters.rad = 100;
+    parameters.rad = 1000;
     parameters.maxAlt = 100;
     parameters.minAlt = 100; 
     parameters.initialAngle = 0;
